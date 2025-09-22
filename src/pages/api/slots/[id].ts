@@ -159,7 +159,7 @@ export const DELETE: APIRoute = async ({ params, request }) => {
         );
       }
 
-      const updateResult = await updateResponse.json();
+      await updateResponse.json();
 
       return new Response(
         JSON.stringify({
