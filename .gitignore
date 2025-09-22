@@ -4,3 +4,6 @@ sistema-tirocini-*.json
 dist/
 .vercel/
 .astro/
+node_modules/
+.env
+dist/
