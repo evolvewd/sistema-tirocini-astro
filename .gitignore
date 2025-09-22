@@ -1,0 +1,6 @@
+*.json
+.env
+sistema-tirocini-*.json
+dist/
+.vercel/
+.astro/

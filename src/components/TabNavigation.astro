@@ -1,0 +1,72 @@
+---
+// Tab Navigation Component
+---
+
+<div class="flex bg-gray-100 border-b border-gray-200 rounded-t-lg">
+  <button
+    id="tab-prenotazione"
+    class="tab-button flex-1 px-4 py-3 md:px-6 md:py-4 text-sm md:text-base font-medium transition-colors duration-200 bg-bordeaux-500 text-white rounded-tl-lg"
+    data-tab="prenotazione"
+  >
+    <span class="hidden sm:inline">Prenota Tirocinio</span>
+    <span class="sm:hidden">Prenota</span>
+  </button>
+  <button
+    id="tab-admin"
+    class="tab-button flex-1 px-4 py-3 md:px-6 md:py-4 text-sm md:text-base font-medium text-gray-700 hover:text-bordeaux-500 transition-colors duration-200 rounded-tr-lg"
+    data-tab="admin"
+  >
+    <span class="hidden sm:inline">Amministrazione</span>
+    <span class="sm:hidden">Admin</span>
+  </button>
+</div>
+
+<script>
+  // Tab switching con event delegation (moderno)
+  document.addEventListener("DOMContentLoaded", () => {
+    const tabButtons = document.querySelectorAll(".tab-button");
+    const tabContents = document.querySelectorAll(".tab-content");
+
+    tabButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const targetTab = (button as HTMLElement).dataset.tab;
+
+        // Reset tutti i tab
+        tabButtons.forEach((btn) => {
+          btn.classList.remove("bg-bordeaux-500", "text-white");
+          btn.classList.add("text-gray-700", "hover:text-bordeaux-500");
+        });
+
+        tabContents.forEach((content) => {
+          content.classList.add("hidden");
+        });
+
+        // Attiva tab selezionato
+        button.classList.remove("text-gray-700", "hover:text-bordeaux-500");
+        button.classList.add("bg-bordeaux-500", "text-white");
+
+        const targetContent = document.getElementById(`content-${targetTab}`);
+        if (targetContent) {
+          targetContent.classList.remove("hidden");
+        }
+
+        // Trigger eventi custom per caricamento dati
+        window.dispatchEvent(
+          new CustomEvent("tabChanged", {
+            detail: { tab: targetTab },
+          })
+        );
+      });
+    });
+  });
+</script>
+
+<style>
+  .tab-button:focus {
+    @apply ring-2 ring-bordeaux-500 ring-offset-2 outline-none;
+  }
+
+  .tab-button:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+</style>

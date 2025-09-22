@@ -1,0 +1,344 @@
+---
+// Form Prenotazione Studenti
+---
+
+<div id="content-prenotazione" class="tab-content p-6 md:p-8">
+  <div class="max-w-4xl mx-auto">
+    <!-- Header Form -->
+    <div class="text-center mb-8">
+      <h2 class="text-2xl md:text-3xl font-bold text-slate-900 mb-2">
+        Prenota il tuo Tirocinio
+      </h2>
+      <p class="text-slate-600 text-lg">
+        Compila tutti i campi per effettuare la prenotazione
+      </p>
+    </div>
+
+    <div id="message" class="mb-6"></div>
+
+    <form id="prenotazioneForm" class="space-y-8">
+      <!-- Email -->
+      <div class="group">
+        <label
+          for="email"
+          class="block text-sm font-semibold text-slate-700 mb-3"
+        >
+          Email universitaria *
+        </label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          required
+          class="form-input"
+          placeholder="tua.email@studenti.unito.it"
+        />
+      </div>
+
+      <!-- Nome e Cognome -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label
+            for="cognome"
+            class="block text-sm font-medium text-gray-700 mb-2"
+          >
+            Cognome *
+          </label>
+          <input
+            type="text"
+            id="cognome"
+            name="cognome"
+            required
+            class="form-input"
+            placeholder="Rossi"
+          />
+        </div>
+        <div>
+          <label
+            for="nome"
+            class="block text-sm font-medium text-gray-700 mb-2"
+          >
+            Nome *
+          </label>
+          <input
+            type="text"
+            id="nome"
+            name="nome"
+            required
+            class="form-input"
+            placeholder="Mario"
+          />
+        </div>
+      </div>
+
+      <!-- Anno di corso e Modalità -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label
+            for="annoCorso"
+            class="block text-sm font-medium text-gray-700 mb-2"
+          >
+            Anno di corso *
+          </label>
+          <select
+            id="annoCorso"
+            name="annoCorso"
+            required
+            class="form-input"
+          >
+            <option value="">Seleziona...</option>
+            <option value="III">III</option>
+            <option value="Fuori corso">Fuori corso</option>
+          </select>
+        </div>
+        <div>
+          <label
+            for="modalita"
+            class="block text-sm font-medium text-gray-700 mb-2"
+          >
+            Modalità *
+          </label>
+          <select
+            id="modalita"
+            name="modalita"
+            required
+            class="form-input"
+          >
+            <option value="">Seleziona...</option>
+            <option value="Standard">Standard</option>
+            <option value="Personalizzato">Personalizzato</option>
+            <option value="Recupero">Recupero</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Numero tirocinio e Mese -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label
+            for="numeroTirocinio"
+            class="block text-sm font-medium text-gray-700 mb-2"
+          >
+            Numero tirocinio *
+          </label>
+          <select
+            id="numeroTirocinio"
+            name="numeroTirocinio"
+            required
+            class="form-input"
+          >
+            <option value="">Seleziona...</option>
+            <option value="1°">1°</option>
+            <option value="2°">2°</option>
+            <option value="3°">3°</option>
+            <option value="4°">4°</option>
+            <option value="Facoltativo">Facoltativo</option>
+          </select>
+        </div>
+        <div>
+          <label
+            for="mese"
+            class="block text-sm font-medium text-gray-700 mb-2"
+          >
+            Mese *
+          </label>
+          <select
+            id="mese"
+            name="mese"
+            required
+            class="form-input"
+          >
+            <option value="">Seleziona...</option>
+            <option value="Ottobre">Ottobre</option>
+            <option value="Aprile">Aprile</option>
+            <option value="Maggio">Maggio</option>
+            <option value="Giugno">Giugno</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Ore da recuperare -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label
+            for="oreRecupero"
+            class="block text-sm font-medium text-gray-700 mb-2"
+          >
+            Ore da recuperare *
+          </label>
+          <select
+            id="oreRecupero"
+            name="oreRecupero"
+            required
+            class="form-input"
+          >
+            <option value="">Seleziona...</option>
+            <option value="No">No</option>
+            <option value="Sì">Sì</option>
+          </select>
+        </div>
+        <div id="qtaOreContainer" class="hidden">
+          <label
+            for="qtaOre"
+            class="block text-sm font-medium text-gray-700 mb-2"
+          >
+            Quantità ore da recuperare *
+          </label>
+          <input
+            type="number"
+            id="qtaOre"
+            name="qtaOre"
+            min="0.5"
+            max="200"
+            step="0.5"
+            placeholder="Es: 25 o 4.5"
+            class="form-input"
+          />
+        </div>
+      </div>
+
+      <!-- Sede di tirocinio -->
+      <div>
+        <label
+          for="slotAssegnato"
+          class="block text-sm font-medium text-gray-700 mb-2"
+        >
+          Sede di tirocinio / Reparto *
+        </label>
+        <select
+          id="slotAssegnato"
+          name="slotAssegnato"
+          required
+          class="form-input appearance-none bg-white cursor-pointer"
+        >
+          <option value="">Caricamento sedi...</option>
+        </select>
+      </div>
+
+      <!-- Note -->
+      <div>
+        <label for="note" class="block text-sm font-medium text-gray-700 mb-2">
+          Note
+        </label>
+        <textarea
+          id="note"
+          name="note"
+          rows="3"
+          placeholder="Eventuali note o richieste particolari..."
+          class="form-input resize-none"
+        ></textarea>
+      </div>
+
+      <!-- Submit Button -->
+      <button
+        type="submit"
+        id="submitBtn"
+        class="w-full bg-bordeaux-500 hover:bg-bordeaux-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium py-3 px-6 rounded-md transition-all duration-200 focus:ring-2 focus:ring-bordeaux-500 focus:ring-offset-2"
+      >
+        <span class="inline-flex items-center gap-2">
+          <i data-lucide="calendar-plus" id="submitIcon" class="w-5 h-5"></i>
+          <span id="submitText">Prenota Tirocinio</span>
+        </span>
+      </button>
+    </form>
+  </div>
+
+  <script>
+    // Form handling con validazione moderna
+    document.addEventListener("DOMContentLoaded", () => {
+      const form = document.getElementById(
+        "prenotazioneForm"
+      ) as HTMLFormElement;
+      const oreRecupero = document.getElementById(
+        "oreRecupero"
+      ) as HTMLSelectElement;
+      const qtaContainer = document.getElementById(
+        "qtaOreContainer"
+      ) as HTMLElement;
+      const qtaInput = document.getElementById("qtaOre") as HTMLInputElement;
+
+
+      // Toggle ore recupero
+      oreRecupero?.addEventListener("change", () => {
+        if (oreRecupero.value === "Sì") {
+          qtaContainer?.classList.remove("hidden");
+          if (qtaInput) qtaInput.required = true;
+        } else {
+          qtaContainer?.classList.add("hidden");
+          if (qtaInput) {
+            qtaInput.required = false;
+            qtaInput.value = "";
+          }
+        }
+      });
+
+      // Form submission
+      form?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const submitBtn = document.getElementById(
+          "submitBtn"
+        ) as HTMLButtonElement;
+        const submitText = document.getElementById("submitText") as HTMLElement;
+        const submitIcon = document.getElementById("submitIcon") as HTMLElement;
+
+        // Loading state
+        submitBtn.disabled = true;
+        submitText.textContent = "Prenotazione in corso...";
+        submitIcon.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i>`;
+
+        try {
+          const formData = new FormData(form);
+          const data = Object.fromEntries(formData.entries());
+
+
+          // Validazione
+          if (
+            data.oreRecupero === "Sì" &&
+            (!data.qtaOre || parseFloat(data.qtaOre as string) < 0.5)
+          ) {
+            throw new Error("Inserisci la quantità di ore da recuperare (minimo 0.5)");
+          }
+
+          // Chiamata API
+          const response = await fetch("/api/prenotazioni", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+          });
+
+          const result = await response.json();
+
+          if (!result.success) {
+            throw new Error(result.error);
+          }
+
+          // Successo
+          form.reset();
+          alert(
+            "🎉 Prenotazione confermata! Riceverai una conferma via email."
+          );
+
+          // Ricarica slot disponibili
+          window.dispatchEvent(new CustomEvent("reloadSlots"));
+        } catch (error) {
+          const errorMessage =
+            error instanceof Error ? error.message : "Errore di connessione";
+          alert("❌ " + errorMessage);
+        } finally {
+          // Reset button
+          submitBtn.disabled = false;
+          submitText.textContent = "Prenota Tirocinio";
+          submitIcon.innerHTML = `<i data-lucide="calendar-plus" class="w-5 h-5"></i>`;
+          
+          // Aggiorna icone Lucide
+          if (typeof (window as any).lucide !== "undefined") {
+            (window as any).lucide.createIcons();
+          }
+        }
+      });
+    });
+
+    // Utility functions
+  </script>
+</div>

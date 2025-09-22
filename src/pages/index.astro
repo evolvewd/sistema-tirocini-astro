@@ -1,0 +1,1064 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Header from "../components/Header.astro";
+import TabNavigation from "../components/TabNavigation.astro";
+import PrenotazioneForm from "../components/PrenotazioneForm.astro";
+import "../styles/global.css";
+---
+
+<BaseLayout title="Sistema Prenotazione Tirocini">
+  <!-- Header -->
+  <Header />
+
+  <!-- Main Container -->
+  <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+    <!-- Tab Navigation -->
+    <TabNavigation />
+
+    <!-- Tab Content: Prenotazione -->
+    <PrenotazioneForm />
+
+    <!-- Tab Content: Admin -->
+    <div id="content-admin" class="tab-content hidden p-4 md:p-6">
+      <!-- Login Admin -->
+      <div
+        id="adminLogin"
+        class="max-w-md mx-auto mt-8 p-6 bg-gray-100 rounded-lg"
+      >
+        <h2 class="text-xl font-bold text-gray-800 mb-4 text-center">
+          Accesso Amministratore
+        </h2>
+        <form id="adminLoginForm" class="mb-4">
+          <!-- Campo username nascosto per accessibilità -->
+          <input
+            type="text"
+            name="username"
+            value="admin"
+            autocomplete="username"
+            style="display: none;"
+            tabindex="-1"
+            aria-hidden="true"
+          />
+          <label
+            for="adminPassword"
+            class="block text-sm font-medium text-gray-700 mb-2"
+          >
+            Password:
+          </label>
+          <input
+            type="password"
+            id="adminPassword"
+            name="adminPassword"
+            placeholder="Inserisci la password admin"
+            class="w-full px-3 py-2 border-2 border-gray-300 rounded-md focus:ring-2 focus:ring-bordeaux-500 focus:border-bordeaux-500 transition-colors duration-200"
+            autocomplete="current-password"
+            required
+          />
+        </form>
+        <button
+          id="loginBtn"
+          type="button"
+          class="w-full bg-bordeaux-500 hover:bg-bordeaux-600 disabled:opacity-50 text-white font-medium py-2 px-4 rounded-md transition-all duration-200"
+        >
+          <span class="inline-flex items-center justify-center">
+            <svg
+              id="loginIcon"
+              class="w-4 h-4 mr-2"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M3 3a1 1 0 011 1v12a1 1 0 11-2 0V4a1 1 0 011-1zm7.707 3.293a1 1 0 010 1.414L9.414 9H17a1 1 0 110 2H9.414l1.293 1.293a1 1 0 01-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0z"
+                clip-rule="evenodd"></path>
+            </svg>
+            <span id="loginText">Accedi</span>
+          </span>
+        </button>
+        <div
+          id="loginError"
+          class="hidden mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded"
+        >
+          Password errata!
+        </div>
+      </div>
+
+      <!-- Pannello Admin (nascosto inizialmente) -->
+      <div id="adminPanel" class="hidden">
+        <div
+          class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4"
+        >
+          <h2 class="text-xl md:text-2xl font-bold text-gray-800">
+            Pannello Amministrazione
+          </h2>
+          <button
+            id="logoutBtn"
+            type="button"
+            class="inline-flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 hover:text-gray-900 font-medium py-2 px-4 rounded-lg transition-all duration-200 border border-gray-300 hover:border-gray-400"
+          >
+            <i data-lucide="log-out" class="w-4 h-4"></i>
+            Esci
+          </button>
+        </div>
+
+        <!-- Aggiungi nuova sede -->
+        <div
+          class="bg-gradient-to-r from-slate-50 to-slate-100 p-6 md:p-8 rounded-2xl mb-8 border border-slate-200 shadow-sm"
+        >
+          <div class="flex items-center gap-3 mb-6">
+            <div class="p-2 bg-bordeaux-100 rounded-lg">
+              <i data-lucide="plus-circle" class="w-5 h-5 text-bordeaux-600"
+              ></i>
+            </div>
+            <h3 class="text-xl font-bold text-slate-900">
+              Aggiungi nuova sede
+            </h3>
+          </div>
+          <form id="addSlotForm" onsubmit="return false;">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label
+                  for="nomeSlot"
+                  class="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  Sede di tirocinio / Reparto
+                </label>
+                <input
+                  type="text"
+                  id="nomeSlot"
+                  name="nomeSlot"
+                  required
+                  placeholder="Es: MEDICINA A, GERIATRIA, TO5..."
+                  class="w-full px-4 py-3 bg-white border-2 border-slate-200 rounded-xl focus:ring-4 focus:ring-bordeaux-100 focus:border-bordeaux-500 transition-all duration-200 text-slate-900 placeholder-slate-400 shadow-sm hover:border-slate-300"
+                />
+              </div>
+              <div>
+                <label
+                  for="postiTotali"
+                  class="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  Posti totali
+                </label>
+                <input
+                  type="number"
+                  id="postiTotali"
+                  name="postiTotali"
+                  min="1"
+                  max="50"
+                  required
+                  placeholder="Es: 3"
+                  class="w-full px-4 py-3 bg-white border-2 border-slate-200 rounded-xl focus:ring-4 focus:ring-bordeaux-100 focus:border-bordeaux-500 transition-all duration-200 text-slate-900 placeholder-slate-400 shadow-sm hover:border-slate-300"
+                />
+              </div>
+            </div>
+            <button
+              type="submit"
+              id="addSlotBtn"
+              class="w-full md:w-auto bg-gradient-to-r from-bordeaux-500 to-bordeaux-600 hover:from-bordeaux-600 hover:to-bordeaux-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+            >
+              <span class="inline-flex items-center gap-2">
+                <i data-lucide="plus" class="w-5 h-5"></i>
+                Aggiungi Sede
+              </span>
+            </button>
+          </form>
+        </div>
+
+        <!-- Lista sedi -->
+        <div class="mb-8">
+          <div class="flex items-center gap-3 mb-6">
+            <div class="p-2 bg-slate-100 rounded-lg">
+              <i data-lucide="map-pin" class="w-5 h-5 text-slate-600"></i>
+            </div>
+            <h3 class="text-xl font-bold text-slate-900">
+              Sedi di tirocinio disponibili
+            </h3>
+          </div>
+          <div
+            id="slotList"
+            class="bg-white border-2 border-slate-200 rounded-2xl p-6 shadow-sm"
+          >
+            <div class="flex items-center justify-center py-8">
+              <div
+                class="animate-spin rounded-full h-6 w-6 border-b-2 border-bordeaux-500 mr-3"
+              >
+              </div>
+              <span class="text-gray-600">Caricamento sedi...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Prenotazioni -->
+        <div>
+          <div
+            class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4"
+          >
+            <div class="flex items-center gap-3">
+              <div class="p-2 bg-slate-100 rounded-lg">
+                <i data-lucide="calendar-check" class="w-5 h-5 text-slate-600"
+                ></i>
+              </div>
+              <h3 class="text-xl font-bold text-slate-900">
+                Prenotazioni effettuate
+              </h3>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-2">
+              <button
+                id="exportBtn"
+                type="button"
+                class="inline-flex items-center gap-2 bg-gradient-to-r from-bordeaux-500 to-bordeaux-600 hover:from-bordeaux-600 hover:to-bordeaux-700 disabled:opacity-50 text-white font-semibold py-3 px-5 rounded-xl transition-all duration-200 text-sm shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+              >
+                <i data-lucide="download" class="w-4 h-4"></i>
+                Esporta PDF
+              </button>
+            </div>
+          </div>
+          <div id="prenotazioniList" class="overflow-x-auto">
+            <div class="flex items-center justify-center py-8">
+              <div
+                class="animate-spin rounded-full h-6 w-6 border-b-2 border-bordeaux-500 mr-3"
+              >
+              </div>
+              <span class="text-gray-600">Caricamento prenotazioni...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<script>
+  // Inizializza Lucide Icons
+  document.addEventListener("DOMContentLoaded", () => {
+    if (typeof (window as any).lucide !== "undefined") {
+      (window as any).lucide.createIcons();
+    }
+  });
+
+  // Sistema moderno con TypeScript-like JavaScript
+  interface AppState {
+    slots: any[];
+    prenotazioni: any[];
+    isAdminLoggedIn: boolean;
+    currentTab: string;
+  }
+
+  const appState: AppState = {
+    slots: [],
+    prenotazioni: [],
+    isAdminLoggedIn: false,
+    currentTab: "prenotazione",
+  };
+
+  // Toast helpers globali (fallback to alert for now)
+  function showSuccess(message: string) {
+    alert("✅ " + message);
+  }
+
+  function showError(message: string) {
+    alert("❌ " + message);
+  }
+
+  // Inizializzazione moderna
+  document.addEventListener("DOMContentLoaded", async () => {
+    // Mostra la signature ASCII
+    console.log(`
+                  .__                    .___           
+  _______  ______ |  |___  __ ____     __| _/_______  __
+_/ __ \\  \\/ /  _ \\|  |\\  \\/ // __ \\   / __ |/ __ \\  \\/ /
+\\  ___/\\   (  <_> )  |_\\   /\\  ___/  / /_/ \\  ___/\\   / 
+ \\___  >\\_/ \\____/|____/\\_/  \\___  > \\____ |\\___  >\\_/  
+     \\/                          \\/       \\/    \\/      
+    `);
+    
+    // Messaggio di contatto
+    console.log("%cGet in touch with me by clicking the footer link", "color: #8b1538; font-weight: bold; font-size: 14px;");
+
+    try {
+      // Carica slot immediatamente
+      await loadSlots();
+
+      // Setup event listeners
+      setupEventListeners();
+
+    } catch (error) {
+      console.error("❌ Errore inizializzazione:", error);
+    }
+  });
+
+  async function loadSlots() {
+    try {
+      // Per gli studenti, carica solo le sedi disponibili (senza token admin)
+      const response = await fetch("/api/slots");
+      const data = await response.json();
+
+      if (data.success) {
+        appState.slots = data.data;
+        updateSlotSelect();
+
+        // Se array vuoto, mostra messaggio informativo
+        if (appState.slots.length === 0 && data.message) {
+          showSlotError(data.message, "", data.suggestion);
+        } else if (appState.slots.length === 0) {
+          showSlotError(
+            "Nessuna sede disponibile",
+            "Tutte le sedi sono al completo",
+            "Contattare l'amministratore per maggiori informazioni"
+          );
+        }
+      } else {
+        // Errore dal server - mostra messaggio informativo
+        console.error("❌ Errore dal server:", data.error);
+        showSlotError(data.error, data.details, data.suggestion);
+        appState.slots = [];
+        updateSlotSelect();
+      }
+    } catch (error) {
+      console.error("❌ Errore caricamento slot:", error);
+      showSlotError(
+        "Errore di connessione",
+        "Impossibile contattare il server",
+        "Verificare la connessione internet e riprovare"
+      );
+      appState.slots = [];
+      updateSlotSelect();
+    }
+  }
+
+  function showSlotError(error: string, details?: string, suggestion?: string) {
+    const select = document.getElementById(
+      "slotAssegnato"
+    ) as HTMLSelectElement;
+    if (!select) return;
+
+    select.innerHTML = `
+      <option value="" disabled selected>❌ ${error}</option>
+      ${details ? `<option value="" disabled>📋 ${details}</option>` : ""}
+      ${suggestion ? `<option value="" disabled>💡 ${suggestion}</option>` : ""}
+    `;
+    select.style.borderColor = "#ef4444";
+    select.style.backgroundColor = "#fef2f2";
+  }
+
+  function updateSlotSelect() {
+    const select = document.getElementById(
+      "slotAssegnato"
+    ) as HTMLSelectElement;
+    if (!select) return;
+
+    select.innerHTML = '<option value="">Seleziona una sede...</option>';
+
+    appState.slots.forEach((slot) => {
+      const option = document.createElement("option");
+      option.value = slot.id;
+      option.textContent = slot.nome; // Solo il nome, senza informazioni sui posti
+      select.appendChild(option);
+    });
+  }
+
+  function setupEventListeners() {
+    // Tab change listener
+    window.addEventListener("tabChanged", (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail && customEvent.detail.tab === "admin") {
+        handleAdminTab();
+      } else if (
+        customEvent.detail &&
+        customEvent.detail.tab === "prenotazione"
+      ) {
+        // Ricarica gli slot quando si torna al form prenotazione
+        loadSlots();
+      }
+    });
+
+    // Listener per ricaricamento slot dal form
+    window.addEventListener("reloadSlots", () => {
+      loadSlots();
+      // Se siamo nel pannello admin, aggiorna anche quello
+      if (appState.isAdminLoggedIn) {
+        loadAdminData();
+        updateSlotList();
+      }
+    });
+
+    // Admin login
+    const loginBtn = document.getElementById("loginBtn");
+    const adminPassword = document.getElementById(
+      "adminPassword"
+    ) as HTMLInputElement;
+
+    loginBtn?.addEventListener("click", handleAdminLogin);
+    adminPassword?.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") handleAdminLogin();
+    });
+
+    // Admin logout
+    const logoutBtn = document.getElementById("logoutBtn");
+    logoutBtn?.addEventListener("click", handleAdminLogout);
+
+    // Form aggiunta slot
+    const addSlotForm = document.getElementById("addSlotForm");
+    addSlotForm?.addEventListener("submit", handleAddSlot);
+
+    // Export PDF button
+    const exportBtn = document.getElementById("exportBtn");
+    exportBtn?.addEventListener("click", handleExportPDF);
+  }
+
+  async function handleAddSlot(e: Event) {
+    e.preventDefault();
+
+    const form = e.target as HTMLFormElement;
+    const formData = new FormData(form);
+    const nome = formData.get("nomeSlot") as string;
+    const postiTotali = parseInt(formData.get("postiTotali") as string);
+
+    if (!nome || !postiTotali || postiTotali < 1) {
+      showError("Inserisci tutti i dati richiesti");
+      return;
+    }
+
+    const submitBtn = document.getElementById(
+      "addSlotBtn"
+    ) as HTMLButtonElement;
+    const originalText = submitBtn.textContent;
+
+    try {
+      submitBtn.disabled = true;
+      submitBtn.innerHTML =
+        '<span class="inline-flex items-center gap-2"><i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Aggiungendo...</span>';
+
+      const response = await fetch("/api/slots", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nome,
+          postiTotali,
+          adminToken: localStorage.getItem("admin_session"),
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        form.reset();
+        await loadAdminData(); // Ricarica i dati admin
+        await loadSlots(); // Ricarica anche gli slot pubblici
+        updateSlotList(); // Aggiorna la lista visibile
+        showSuccess("Sede aggiunta con successo!");
+      } else {
+        showError("Errore: " + result.error);
+      }
+    } catch (error) {
+      console.error("Error adding slot:", error);
+      showError("Errore di connessione");
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML =
+        originalText ||
+        '<span class="inline-flex items-center gap-2"><i data-lucide="plus" class="w-5 h-5"></i> Aggiungi Sede</span>';
+
+      // Aggiorna icone
+      if (typeof (window as any).lucide !== "undefined") {
+        (window as any).lucide.createIcons();
+      }
+    }
+  }
+
+  function handleAdminTab() {
+    const savedLogin = localStorage.getItem("admin_session");
+    if (savedLogin) {
+      appState.isAdminLoggedIn = true;
+      showAdminPanel();
+    }
+  }
+
+  async function handleAdminLogin() {
+    const form = document.getElementById("adminLoginForm") as HTMLFormElement;
+    const formData = new FormData(form);
+    const password = formData.get("adminPassword") as string;
+    const loginBtn = document.getElementById("loginBtn") as HTMLButtonElement;
+    const loginText = document.getElementById("loginText") as HTMLElement;
+    const loginIcon = document.getElementById("loginIcon") as HTMLElement;
+    const errorDiv = document.getElementById("loginError") as HTMLElement;
+
+    if (!password) {
+      errorDiv.classList.remove("hidden");
+      errorDiv.textContent = "Inserisci la password";
+      return;
+    }
+
+    // Loading state
+    loginBtn.disabled = true;
+    loginText.textContent = "Verifica...";
+    loginIcon.innerHTML = `
+      <svg class="animate-spin w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+    `;
+
+    try {
+      const response = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        localStorage.setItem("admin_session", result.token);
+        appState.isAdminLoggedIn = true;
+        showAdminPanel();
+        errorDiv.classList.add("hidden");
+        form.reset(); // Reset del form dopo login riuscito
+      } else {
+        errorDiv.classList.remove("hidden");
+        errorDiv.textContent = "Password errata!";
+        setTimeout(() => errorDiv.classList.add("hidden"), 3000);
+      }
+    } catch (error) {
+      errorDiv.classList.remove("hidden");
+      errorDiv.textContent = "Errore di connessione!";
+      setTimeout(() => errorDiv.classList.add("hidden"), 3000);
+    } finally {
+      // Reset button
+      loginBtn.disabled = false;
+      loginText.textContent = "Accedi";
+      loginIcon.innerHTML = `
+        <path fill-rule="evenodd" d="M3 3a1 1 0 011 1v12a1 1 0 11-2 0V4a1 1 0 011-1zm7.707 3.293a1 1 0 010 1.414L9.414 9H17a1 1 0 110 2H9.414l1.293 1.293a1 1 0 01-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+      `;
+    }
+  }
+
+  function handleAdminLogout() {
+    // Rimuovi token dalla localStorage
+    localStorage.removeItem("admin_session");
+
+    // Reset stato app
+    appState.isAdminLoggedIn = false;
+    appState.prenotazioni = [];
+
+    // Mostra form di login e nascondi pannello
+    const loginDiv = document.getElementById("adminLogin");
+    const panelDiv = document.getElementById("adminPanel");
+
+    loginDiv?.classList.remove("hidden");
+    panelDiv?.classList.add("hidden");
+
+    // Pulisci campo password
+    const adminPassword = document.getElementById(
+      "adminPassword"
+    ) as HTMLInputElement;
+    if (adminPassword) adminPassword.value = "";
+  }
+
+  function showAdminPanel() {
+    const loginDiv = document.getElementById("adminLogin");
+    const panelDiv = document.getElementById("adminPanel");
+
+    loginDiv?.classList.add("hidden");
+    panelDiv?.classList.remove("hidden");
+
+    // Carica dati admin
+    loadAdminData();
+
+    // Inizializza icone Lucide
+    setTimeout(() => {
+      if (typeof (window as any).lucide !== "undefined") {
+        (window as any).lucide.createIcons();
+      }
+    }, 100);
+  }
+
+  async function loadAdminData() {
+    try {
+      const adminToken = localStorage.getItem("admin_session");
+      
+      // Carica slot e prenotazioni in parallelo
+      const [slotsResponse, prenotazioniResponse] = await Promise.all([
+        fetch(`/api/slots?adminToken=${adminToken}`), // Aggiungi token per vedere tutti gli slot
+        fetch(
+          "/api/prenotazioni?adminToken=" + adminToken
+        ),
+      ]);
+
+      const slotsData = await slotsResponse.json();
+      const prenotazioniData = await prenotazioniResponse.json();
+
+      // Carica i dati negli stati
+      if (slotsData.success) {
+        appState.slots = slotsData.data;
+      }
+
+      if (prenotazioniData.success) {
+        appState.prenotazioni = prenotazioniData.data;
+      }
+
+      // Aggiorna le liste solo dopo aver caricato entrambi i dati
+      updateSlotList();
+      updatePrenotazioniList();
+      
+    } catch (error) {
+      console.error("❌ Errore caricamento dati admin:", error);
+    }
+  }
+
+  function updateSlotList() {
+    const container = document.getElementById("slotList");
+    if (!container) return;
+
+    if (appState.slots.length === 0) {
+      container.innerHTML = `
+        <div class="text-center py-8">
+          <div class="text-red-500 mb-2">
+            <i data-lucide="alert-circle" class="w-8 h-8 mx-auto mb-2"></i>
+          </div>
+          <p class="text-gray-600 font-medium">Impossibile caricare le sedi</p>
+          <p class="text-gray-500 text-sm mt-1">Nessuna sede trovata nel foglio Google Sheets</p>
+          <button 
+            onclick="location.reload()" 
+            class="mt-4 inline-flex items-center gap-2 bg-bordeaux-500 hover:bg-bordeaux-600 text-white px-4 py-2 rounded-lg text-sm transition-colors"
+          >
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+            Ricarica
+          </button>
+        </div>
+      `;
+
+      // Aggiorna le icone Lucide
+      if (typeof (window as any).lucide !== "undefined") {
+        (window as any).lucide.createIcons();
+      }
+      return;
+    }
+
+    container.innerHTML = appState.slots
+      .map((slot) => {
+        const prenotazioniCount = appState.prenotazioni.filter((p) => {
+          // Confronto come stringhe per evitare problemi di conversione
+          const slotAssegnato = String(p.slotAssegnato).trim();
+          const slotId = String(slot.id).trim();
+          return slotAssegnato === slotId;
+        }).length;
+        const disponibili = Math.max(0, slot.postiTotali - prenotazioniCount);
+        
+
+        return `
+        <div class="flex justify-between items-center py-3 border-b border-gray-200 last:border-b-0">
+          <div class="flex-1">
+            <div class="font-semibold text-bordeaux-500">${slot.nome}</div>
+            <div class="text-sm text-gray-600">Posti totali: ${slot.postiTotali}</div>
+          </div>
+          <div class="flex items-center gap-4">
+            <div class="text-right">
+              <div class="${disponibili > 0 ? "text-green-600" : "text-red-600"} font-semibold">
+                ${prenotazioniCount}/${slot.postiTotali} occupati
+              </div>
+              <div class="text-xs text-gray-500">
+                ${disponibili} disponibili
+              </div>
+            </div>
+            <button 
+              onclick="deleteSlot(${slot.id}, '${slot.nome}')"
+              class="inline-flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200 ${prenotazioniCount > 0 ? "bg-gray-300 text-gray-500 cursor-not-allowed" : "bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700"}"
+              ${prenotazioniCount > 0 ? 'disabled title="Non puoi eliminare sedi con prenotazioni attive"' : 'title="Elimina sede"'}
+            >
+               <i data-lucide="${prenotazioniCount > 0 ? "lock" : "trash-2"}" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+      `;
+      })
+      .join("");
+
+    // Aggiorna le icone Lucide
+    if (typeof (window as any).lucide !== "undefined") {
+      (window as any).lucide.createIcons();
+    }
+  }
+
+  function updatePrenotazioniList() {
+    const container = document.getElementById("prenotazioniList");
+    if (!container) return;
+
+    if (appState.prenotazioni.length === 0) {
+      container.innerHTML =
+        '<p class="text-gray-500 italic text-center py-8">Nessuna prenotazione presente</p>';
+      return;
+    }
+
+    // Tabella completa delle prenotazioni
+    container.innerHTML = `
+      <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="px-4 py-3 bg-gray-50 border-b border-gray-200">
+          <h4 class="text-sm font-medium text-gray-900">
+            ${appState.prenotazioni.length} prenotazioni trovate
+          </h4>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Studente</th>
+                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Corso</th>
+                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tirocinio</th>
+                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sede</th>
+                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recupero</th>
+                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
+                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Azioni</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              ${appState.prenotazioni
+                .map((prenotazione, index) => {
+                  const sede = appState.slots.find(
+                    (s) => s.id == prenotazione.slotAssegnato
+                  );
+                  const dataFormatted = new Date(
+                    prenotazione.dataPrenotazione
+                  ).toLocaleDateString("it-IT", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  });
+
+                  return `
+                  <tr class="${index % 2 === 0 ? "bg-white" : "bg-gray-50"}">
+                    <td class="px-3 py-4 whitespace-nowrap">
+                      <div class="text-sm font-medium text-gray-900">${prenotazione.cognome} ${prenotazione.nome}</div>
+                      <div class="text-sm text-gray-500">${prenotazione.email}</div>
+                    </td>
+                    <td class="px-3 py-4 whitespace-nowrap">
+                      <div class="text-sm text-gray-900">${prenotazione.annoCorso}° anno</div>
+                      <div class="text-sm text-gray-500">${prenotazione.modalita}</div>
+                    </td>
+                    <td class="px-3 py-4 whitespace-nowrap">
+                      <div class="text-sm text-gray-900">N° ${prenotazione.numeroTirocinio}</div>
+                      <div class="text-sm text-gray-500">${prenotazione.mese}</div>
+                    </td>
+                    <td class="px-3 py-4 whitespace-nowrap">
+                      <div class="text-sm font-medium text-bordeaux-600">${sede?.nome || "Sede non trovata"}</div>
+                      <div class="text-sm text-gray-500">ID: ${prenotazione.slotAssegnato}</div>
+                    </td>
+                    <td class="px-3 py-4 whitespace-nowrap">
+                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        prenotazione.oreRecupero === "Sì"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : "bg-green-100 text-green-800"
+                      }">
+                        ${prenotazione.oreRecupero === "Sì" ? (() => {
+                          const ore = parseFloat(prenotazione.qtaOre || "0");
+                          const oreText = ore % 1 === 0 ? ore.toString() : ore.toFixed(1);
+                          return `Sì (${oreText} ore)`;
+                        })() : "No"}
+                      </span>
+                    </td>
+                    <td class="px-3 py-4 whitespace-nowrap text-sm text-gray-500">
+                      ${dataFormatted}
+                    </td>
+                    <td class="px-3 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <button
+                        onclick="deletePrenotazione('${prenotazione.id}', '${prenotazione.cognome} ${prenotazione.nome}')"
+                        class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-all duration-200"
+                        title="Elimina prenotazione"
+                      >
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                      </button>
+                    </td>
+                  </tr>
+                  ${
+                    prenotazione.note
+                      ? `
+                    <tr class="${index % 2 === 0 ? "bg-white" : "bg-gray-50"}">
+                      <td colspan="7" class="px-3 py-2 text-sm text-gray-600 border-t border-gray-100">
+                        <strong>Note:</strong> ${prenotazione.note}
+                      </td>
+                    </tr>
+                  `
+                      : ""
+                  }
+                `;
+                })
+                .join("")}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+
+    // Aggiorna le icone Lucide
+    if (typeof (window as any).lucide !== "undefined") {
+      (window as any).lucide.createIcons();
+    }
+  }
+
+  // Funzione globale per eliminare slot
+  (window as any).deleteSlot = async function (id: number, nomeSlot: string) {
+    if (!confirm(`Sei sicuro di voler eliminare la sede "${nomeSlot}"?`)) {
+      return;
+    }
+
+    try {
+      const token =
+        localStorage.getItem("admin_session") ||
+        "admin_1758307374159_ywk6ewma2x";
+
+      const response = await fetch(`/api/slots/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token,
+        },
+      });
+
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Ricarica i dati admin E gli slot pubblici
+        await loadAdminData();
+        await loadSlots(); // Ricarica anche gli slot pubblici
+        updateSlotList(); // Aggiorna la lista visibile nel pannello admin
+        showSuccess("Sede eliminata con successo");
+      } else {
+        showError("Errore nell'eliminazione: " + result.error);
+      }
+    } catch (error) {
+      console.error("Error deleting slot:", error);
+      showError("Errore di connessione");
+    }
+  };
+
+  // Funzione globale per eliminare prenotazione
+  (window as any).deletePrenotazione = async function (
+    id: string,
+    nomeStudente: string
+  ) {
+    if (
+      !confirm(
+        `Sei sicuro di voler eliminare la prenotazione di ${nomeStudente}?`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const token =
+        localStorage.getItem("admin_session") ||
+        "admin_1758307374159_ywk6ewma2x";
+
+      const response = await fetch(`/api/prenotazioni/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: token,
+        },
+      });
+
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Ricarica i dati admin E gli slot pubblici
+        await loadAdminData();
+        await loadSlots(); // Ricarica anche gli slot pubblici per aggiornare conteggi
+        updateSlotList(); // Aggiorna la lista visibile nel pannello admin
+        showSuccess("Prenotazione eliminata con successo");
+      } else {
+        showError("Errore nell'eliminazione: " + result.error);
+      }
+    } catch (error) {
+      console.error("Error deleting prenotazione:", error);
+      showError("Errore di connessione");
+    }
+  };
+
+  // Funzione per export PDF
+  function handleExportPDF() {
+    try {
+      if (appState.prenotazioni.length === 0) {
+        showError("Nessuna prenotazione da esportare");
+        return;
+      }
+
+      // Crea nuovo documento PDF in orizzontale
+      const { jsPDF } = (window as any).jspdf;
+      const doc = new jsPDF('landscape', 'mm', 'a4');
+
+      // Titolo del documento
+      doc.setFontSize(18);
+      doc.setFont("helvetica", "bold");
+      doc.text("Report Prenotazioni Tirocini", 20, 25);
+
+      // Data di generazione
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Generato il: ${new Date().toLocaleDateString("it-IT")} alle ${new Date().toLocaleTimeString("it-IT")}`, 20, 35);
+
+      // Statistiche generali
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.text("Statistiche", 20, 45);
+      
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Totale prenotazioni: ${appState.prenotazioni.length}`, 20, 55);
+      doc.text(`Sedi disponibili: ${appState.slots.length}`, 20, 62);
+
+      // Tabella orizzontale con spazi ottimizzati
+      const startY = 75;
+      const rowHeight = 8;
+      const colWidths = [20, 22, 40, 15, 18, 12, 18, 35, 12, 15, 18, 22];
+      const colPositions = [20, 40, 62, 102, 117, 135, 147, 165, 200, 212, 227, 245];
+      
+      // Header della tabella
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "bold");
+      const headers = [
+        "Cognome", "Nome", "Email", "Anno", "Modalità", "N°", 
+        "Mese", "Sede", "Rec.", "Ore", "Data", "Note"
+      ];
+      
+      // Disegna header
+      headers.forEach((header, index) => {
+        doc.text(header, colPositions[index], startY);
+      });
+      
+      // Linea sotto header
+      doc.setDrawColor(0, 0, 0);
+      doc.line(20, startY + 3, 275, startY + 3);
+      
+      // Dati prenotazioni
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7);
+      
+      let currentY = startY + 8;
+      const pageHeight = doc.internal.pageSize.height;
+      
+      // Funzione per dividere il testo in più righe
+      const wrapText = (text: string, maxWidth: number, maxLines: number = 2) => {
+        const words = text.split(' ');
+        const lines = [];
+        let currentLine = '';
+        
+        for (const word of words) {
+          const testLine = currentLine + (currentLine ? ' ' : '') + word;
+          if (doc.getTextWidth(testLine) <= maxWidth) {
+            currentLine = testLine;
+          } else {
+            if (currentLine) {
+              lines.push(currentLine);
+              currentLine = word;
+            } else {
+              lines.push(word);
+            }
+            if (lines.length >= maxLines) break;
+          }
+        }
+        if (currentLine && lines.length < maxLines) {
+          lines.push(currentLine);
+        }
+        return lines;
+      };
+      
+      appState.prenotazioni.forEach((prenotazione, index) => {
+        const sede = appState.slots.find(s => s.id == prenotazione.slotAssegnato);
+        const dataFormatted = new Date(prenotazione.dataPrenotazione).toLocaleDateString("it-IT");
+        const ore = parseFloat(prenotazione.qtaOre || "0");
+        const oreText = ore % 1 === 0 ? ore.toString() : ore.toFixed(1);
+        
+        // Trunca i testi lunghi per evitare overflow
+        const truncateText = (text: string, maxLength: number) => {
+          return text.length > maxLength ? text.substring(0, maxLength - 3) + "..." : text;
+        };
+
+        // Prepara i dati per ogni colonna
+        const rowData = [
+          truncateText(prenotazione.cognome, 16),
+          truncateText(prenotazione.nome, 18),
+          truncateText(prenotazione.email, 35),
+          `${prenotazione.annoCorso}°`,
+          truncateText(prenotazione.modalita, 16),
+          prenotazione.numeroTirocinio,
+          truncateText(prenotazione.mese, 16),
+          truncateText(sede?.nome || "N/A", 32),
+          prenotazione.oreRecupero,
+          prenotazione.oreRecupero === "Sì" ? oreText : "-",
+          dataFormatted,
+          prenotazione.note || ""
+        ];
+        
+        // Calcola altezza necessaria per le note (se presenti)
+        const noteLines = prenotazione.note ? wrapText(prenotazione.note, colWidths[11] * 2.5, 2) : [""];
+        const noteHeight = noteLines.length * 3;
+        const totalRowHeight = Math.max(rowHeight, noteHeight);
+        
+        // Controlla se serve una nuova pagina
+        if (currentY + totalRowHeight > pageHeight - 20) {
+          doc.addPage();
+          currentY = 20;
+          
+          // Ridisegna header su nuova pagina
+          doc.setFontSize(8);
+          doc.setFont("helvetica", "bold");
+          headers.forEach((header, headerIndex) => {
+            doc.text(header, colPositions[headerIndex], currentY);
+          });
+          doc.line(20, currentY + 3, 275, currentY + 3);
+          currentY += 8;
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(7);
+        }
+        
+        // Disegna riga dati (tutte le colonne tranne le note)
+        for (let colIndex = 0; colIndex < rowData.length - 1; colIndex++) {
+          doc.text(rowData[colIndex], colPositions[colIndex], currentY);
+        }
+        
+        // Disegna le note su più righe se presenti
+        if (prenotazione.note && prenotazione.note.trim()) {
+          noteLines.forEach((line, lineIndex) => {
+            if (line.trim()) {
+              doc.text(line, colPositions[11], currentY + (lineIndex * 3));
+            }
+          });
+        }
+        
+        currentY += totalRowHeight;
+        
+        // Linea separatrice leggera
+        if (index < appState.prenotazioni.length - 1) {
+          doc.setDrawColor(220, 220, 220);
+          doc.line(20, currentY - 2, 275, currentY - 2);
+          doc.setDrawColor(0, 0, 0);
+        }
+      });
+
+      // Footer
+      const totalPages = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFontSize(7);
+        doc.setFont("helvetica", "normal");
+        doc.setDrawColor(200, 200, 200);
+        doc.line(20, pageHeight - 15, doc.internal.pageSize.width - 20, pageHeight - 15);
+        doc.setDrawColor(0, 0, 0);
+        doc.text(`${i}/${totalPages}`, 20, pageHeight - 8);
+        doc.text("Sistema Tirocini", doc.internal.pageSize.width - 50, pageHeight - 8);
+      }
+
+      // Salva il PDF
+      const fileName = `prenotazioni-tirocini-${new Date().toISOString().split('T')[0]}.pdf`;
+      doc.save(fileName);
+
+      showSuccess("PDF esportato con successo!");
+    } catch (error) {
+      console.error("Error exporting PDF:", error);
+      showError("Errore durante l'esportazione del PDF");
+    }
+  }
+</script>
