@@ -249,7 +249,12 @@ export const POST: APIRoute = async ({ request }) => {
       cognome: body.cognome.trim(),
       sedeNome,
       dataPrenotazione: dataPrenotazioneStr,
-    }).catch(() => {});
+    })
+      .then((ok) => {
+        if (ok) console.log("[prenotazioni] Email conferma inviata a", body.email.trim());
+        else console.warn("[prenotazioni] Email conferma non inviata (Resend non configurato o errore)");
+      })
+      .catch((err) => console.error("[prenotazioni] Errore invio email conferma:", err));
 
     return new Response(
       JSON.stringify({

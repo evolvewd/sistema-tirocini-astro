@@ -5,14 +5,27 @@
 <div id="content-prenotazione" class="tab-content p-6 md:p-8">
   <div class="max-w-4xl mx-auto">
     <!-- Messaggio: accedi per prenotare -->
-    <div id="prenotazione-login-required" class="hidden mb-6 p-6 bg-amber-50 border border-amber-200 rounded-xl text-center">
-      <p class="text-amber-800 font-medium mb-2">Per prenotare devi effettuare l'accesso.</p>
-      <p class="text-amber-700 text-sm mb-4">Crea un account o accedi con la tua email.</p>
+    <div
+      id="prenotazione-login-required"
+      class="hidden mb-6 p-6 bg-amber-50 border border-amber-200 rounded-xl text-center"
+    >
+      <p class="text-amber-800 font-medium mb-2">
+        Per prenotare devi effettuare l'accesso.
+      </p>
+      <p class="text-amber-700 text-sm mb-4">
+        Crea un account o accedi con la tua email.
+      </p>
       <div class="flex flex-wrap justify-center gap-3">
-        <a href="/auth/login" class="btn-primary inline-flex items-center gap-2 py-2 px-4 rounded-lg text-sm">
+        <a
+          href="/auth/login"
+          class="btn-primary inline-flex items-center gap-2 py-2 px-4 rounded-lg text-sm"
+        >
           Accedi
         </a>
-        <a href="/auth/signup" class="inline-flex items-center gap-2 py-2 px-4 rounded-lg border-2 border-bordeaux-500 text-bordeaux-600 hover:bg-bordeaux-50 text-sm font-medium transition-colors">
+        <a
+          href="/auth/signup"
+          class="inline-flex items-center gap-2 py-2 px-4 rounded-lg border-2 border-bordeaux-500 text-bordeaux-600 hover:bg-bordeaux-50 text-sm font-medium transition-colors"
+        >
           Registrati
         </a>
       </div>
@@ -94,12 +107,7 @@
           >
             Anno di corso *
           </label>
-          <select
-            id="annoCorso"
-            name="annoCorso"
-            required
-            class="form-input"
-          >
+          <select id="annoCorso" name="annoCorso" required class="form-input">
             <option value="">Seleziona...</option>
             <option value="III">III</option>
             <option value="Fuori corso">Fuori corso</option>
@@ -112,12 +120,7 @@
           >
             Modalità *
           </label>
-          <select
-            id="modalita"
-            name="modalita"
-            required
-            class="form-input"
-          >
+          <select id="modalita" name="modalita" required class="form-input">
             <option value="">Seleziona...</option>
             <option value="Standard">Standard</option>
             <option value="Personalizzato">Personalizzato</option>
@@ -156,17 +159,20 @@
           >
             Mese *
           </label>
-          <select
-            id="mese"
-            name="mese"
-            required
-            class="form-input"
-          >
+          <select id="mese" name="mese" required class="form-input">
             <option value="">Seleziona...</option>
-            <option value="Ottobre">Ottobre</option>
+            <option value="Gennaio">Gennaio</option>
+            <option value="Febbraio">Febbraio</option>
+            <option value="Marzo">Marzo</option>
             <option value="Aprile">Aprile</option>
             <option value="Maggio">Maggio</option>
             <option value="Giugno">Giugno</option>
+            <option value="Luglio">Luglio</option>
+            <option value="Agosto">Agosto</option>
+            <option value="Settembre">Settembre</option>
+            <option value="Ottobre">Ottobre</option>
+            <option value="Novembre">Novembre</option>
+            <option value="Dicembre">Dicembre</option>
           </select>
         </div>
       </div>
@@ -239,8 +245,7 @@
           name="note"
           rows="3"
           placeholder="Eventuali note o richieste particolari..."
-          class="form-input resize-none"
-        ></textarea>
+          class="form-input resize-none"></textarea>
       </div>
 
       <!-- Submit Button -->
@@ -261,7 +266,9 @@
     import { supabase } from "../lib/supabase";
 
     function setPrenotazioneAuthState(hasSession: boolean) {
-      const loginRequired = document.getElementById("prenotazione-login-required");
+      const loginRequired = document.getElementById(
+        "prenotazione-login-required",
+      );
       const formHeader = document.getElementById("prenotazione-form-header");
       const form = document.getElementById("prenotazioneForm");
       if (hasSession) {
@@ -275,31 +282,52 @@
       }
     }
 
-    function prefillFormFromSession(session: { user: { email?: string; user_metadata?: Record<string, string> } } | null) {
+    function prefillFormFromSession(
+      session: {
+        user: { email?: string; user_metadata?: Record<string, string> };
+      } | null,
+    ) {
       if (!session?.user) return;
       const meta = session.user.user_metadata ?? {};
-      const emailInput = document.getElementById("email") as HTMLInputElement | null;
-      const nomeInput = document.getElementById("nome") as HTMLInputElement | null;
-      const cognomeInput = document.getElementById("cognome") as HTMLInputElement | null;
+      const emailInput = document.getElementById(
+        "email",
+      ) as HTMLInputElement | null;
+      const nomeInput = document.getElementById(
+        "nome",
+      ) as HTMLInputElement | null;
+      const cognomeInput = document.getElementById(
+        "cognome",
+      ) as HTMLInputElement | null;
 
-      if (emailInput && session.user.email) emailInput.value = session.user.email;
+      if (emailInput && session.user.email)
+        emailInput.value = session.user.email;
 
       const fullName = String(meta.full_name ?? meta.name ?? "").trim();
       const parts = fullName ? fullName.split(/\s+/) : [];
       const nome = String(meta.given_name ?? parts[0] ?? "").trim();
-      const cognome = String(meta.family_name ?? parts.slice(1).join(" ") ?? "").trim();
+      const cognome = String(
+        meta.family_name ?? parts.slice(1).join(" ") ?? "",
+      ).trim();
 
       if (nomeInput && nome) nomeInput.value = nome;
       if (cognomeInput && cognome) cognomeInput.value = cognome;
     }
 
     document.addEventListener("DOMContentLoaded", async () => {
-      const form = document.getElementById("prenotazioneForm") as HTMLFormElement;
-      const oreRecupero = document.getElementById("oreRecupero") as HTMLSelectElement;
-      const qtaContainer = document.getElementById("qtaOreContainer") as HTMLElement;
+      const form = document.getElementById(
+        "prenotazioneForm",
+      ) as HTMLFormElement;
+      const oreRecupero = document.getElementById(
+        "oreRecupero",
+      ) as HTMLSelectElement;
+      const qtaContainer = document.getElementById(
+        "qtaOreContainer",
+      ) as HTMLElement;
       const qtaInput = document.getElementById("qtaOre") as HTMLInputElement;
 
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       setPrenotazioneAuthState(!!session);
       prefillFormFromSession(session);
 
@@ -311,7 +339,9 @@
       window.addEventListener("tabChanged", (e: Event) => {
         const detail = (e as CustomEvent).detail;
         if (detail?.tab === "prenotazione") {
-          supabase.auth.getSession().then(({ data: { session: s } }) => prefillFormFromSession(s));
+          supabase.auth
+            .getSession()
+            .then(({ data: { session: s } }) => prefillFormFromSession(s));
         }
       });
 
@@ -331,14 +361,18 @@
       form?.addEventListener("submit", async (e) => {
         e.preventDefault();
 
-        const { data: { session: submitSession } } = await supabase.auth.getSession();
+        const {
+          data: { session: submitSession },
+        } = await supabase.auth.getSession();
         if (!submitSession?.access_token) {
           alert("Sessione scaduta. Effettua di nuovo l'accesso per prenotare.");
           setPrenotazioneAuthState(false);
           return;
         }
 
-        const submitBtn = document.getElementById("submitBtn") as HTMLButtonElement;
+        const submitBtn = document.getElementById(
+          "submitBtn",
+        ) as HTMLButtonElement;
         const submitText = document.getElementById("submitText") as HTMLElement;
         const submitIcon = document.getElementById("submitIcon") as HTMLElement;
 
@@ -354,7 +388,9 @@
             data.oreRecupero === "Sì" &&
             (!data.qtaOre || parseFloat(data.qtaOre as string) < 0.5)
           ) {
-            throw new Error("Inserisci la quantità di ore da recuperare (minimo 0.5)");
+            throw new Error(
+              "Inserisci la quantità di ore da recuperare (minimo 0.5)",
+            );
           }
 
           const response = await fetch("/api/prenotazioni", {
@@ -378,7 +414,8 @@
 
           window.dispatchEvent(new CustomEvent("reloadSlots"));
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : "Errore di connessione";
+          const errorMessage =
+            error instanceof Error ? error.message : "Errore di connessione";
           alert("❌ " + errorMessage);
         } finally {
           submitBtn.disabled = false;

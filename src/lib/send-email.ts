@@ -19,7 +19,7 @@ export interface PrenotazioneEmailData {
  */
 export async function sendPrenotazioneConfirmEmail(data: PrenotazioneEmailData): Promise<boolean> {
   if (!RESEND_API_KEY) {
-    console.warn("RESEND_API_KEY non impostato: email di conferma non inviata");
+    console.warn("[send-email] RESEND_API_KEY non impostato: email di conferma non inviata. Imposta RESEND_API_KEY e RESEND_FROM in Vercel (Environment Variables).");
     return false;
   }
 
@@ -55,13 +55,13 @@ export async function sendPrenotazioneConfirmEmail(data: PrenotazioneEmailData):
     });
 
     if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      console.error("Resend API error:", res.status, err);
+      const err = (await res.json().catch(() => ({}))) as { message?: string };
+      console.error("[send-email] Resend API error:", res.status, err?.message ?? err);
       return false;
     }
     return true;
   } catch (e) {
-    console.error("Errore invio email:", e);
+    console.error("[send-email] Errore invio email:", e);
     return false;
   }
 }
