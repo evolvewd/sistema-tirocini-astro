@@ -36,6 +36,13 @@ ADMIN_PASSWORD=admin00!
 
 Su Vercel (o altro host) imposta le stesse variabili in **Settings → Environment Variables**.
 
+### Email conferma prenotazione (opzionale)
+
+Per inviare l’email “Prenotazione confermata” dopo ogni prenotazione:
+
+1. Crea un account su [resend.com](https://resend.com) e ottieni un **API Key**.
+2. Aggiungi in `.env`: `RESEND_API_KEY=re_xxx` e, se vuoi, `RESEND_FROM=Nome <tua@dominio.com>` (altrimenti si usa `onboarding@resend.dev`; per produzione verifica il dominio in Resend).
+
 ## 4. Auth (email/password e Google)
 
 - **Registrazione / accesso**: da `/auth/signup` e `/auth/login` (email+password oppure **Accedi con Google**).

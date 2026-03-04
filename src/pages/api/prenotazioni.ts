@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { createSupabaseServerClient } from "../../lib/supabase-server";
 import { getUserIdFromAuthHeader } from "../../lib/supabase-auth";
+import { sendPrenotazioneConfirmEmail } from "../../lib/send-email";
 
 function validateAdminToken(token: string | null): boolean {
   if (!token) return false;
@@ -179,7 +180,7 @@ export const POST: APIRoute = async ({ request }) => {
 
     const { data: slotRow } = await supabase
       .from("slots")
-      .select("id, posti_totali")
+      .select("id, posti_totali, nome")
       .eq("id", slotId)
       .single();
 
@@ -235,6 +236,25 @@ export const POST: APIRoute = async ({ request }) => {
         { status: 500, headers: { "Content-Type": "application/json" } }
       );
     }
+
+    const sedeNome = slotRow?.nome ?? "Sede tirocinio";
+    const dataPrenotazioneStr = inserted.data_prenotazione
+      ? new Date(inserted.data_prenotazione).toLocaleDateString("it-IT", {
+          day: "2-digit",
+          month: "long",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : new Date().toLocaleDateString("it-IT");
+
+    sendPrenotazioneConfirmEmail({
+      to: body.email.trim(),
+      nome: body.nome.trim(),
+      cognome: body.cognome.trim(),
+      sedeNome,
+      dataPrenotazione: dataPrenotazioneStr,
+    }).catch(() => {});
 
     return new Response(
       JSON.stringify({

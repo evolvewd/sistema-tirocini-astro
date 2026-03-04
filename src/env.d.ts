@@ -11,6 +11,10 @@ interface ImportMetaEnv {
   readonly SUPABASE_JWT_SECRET?: string;
   /** Password pannello admin */
   readonly ADMIN_PASSWORD?: string;
+  /** Resend: API key per email transazionali (conferma prenotazione) */
+  readonly RESEND_API_KEY?: string;
+  /** Resend: indirizzo mittente (es. "Sistema Tirocini <onboarding@resend.dev>") */
+  readonly RESEND_FROM?: string;
 }
 
 interface ImportMeta {

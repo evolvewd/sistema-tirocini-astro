@@ -138,7 +138,12 @@ import "../../styles/global.css";
       });
 
       if (error) {
-        errorDiv.textContent = error.message;
+        const msg = error.message ?? "";
+        const isAlreadyRegistered =
+          /already registered|già registrat|already exists|user already exists|email.*already/i.test(msg);
+        errorDiv.textContent = isAlreadyRegistered
+          ? "Questo indirizzo email è già registrato. Usa \"Accedi\" per entrare con la password o con Google."
+          : msg;
         errorDiv.classList.remove("hidden");
         signupBtn.disabled = false;
         signupBtnText.textContent = "Registrati";
