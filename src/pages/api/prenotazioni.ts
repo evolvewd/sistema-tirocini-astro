@@ -129,7 +129,7 @@ export const GET: APIRoute = async ({ url, request }) => {
 export const POST: APIRoute = async ({ request }) => {
   try {
     const authHeader = request.headers.get("Authorization");
-    const userId = getUserIdFromAuthHeader(authHeader);
+    const userId = await getUserIdFromAuthHeader(authHeader);
 
     if (!userId) {
       return new Response(
