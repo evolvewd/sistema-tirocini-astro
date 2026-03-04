@@ -7,16 +7,43 @@ import "../styles/global.css";
 ---
 
 <BaseLayout title="Sistema Prenotazione Tirocini">
-  <!-- Header -->
-  <Header />
+  <!-- Landing: visibile solo se NON loggato -->
+  <section id="landing" class="bg-white rounded-lg shadow-lg overflow-hidden p-8 md:p-12 text-center">
+    <div class="max-w-xl mx-auto">
+      <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
+        Sistema Prenotazione Tirocini
+      </h1>
+      <p class="text-slate-600 text-lg mb-8">
+        Accedi o registrati per prenotare il tuo tirocinio e gestire le sedi disponibili.
+      </p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <a
+          href="/auth/login"
+          class="inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-bordeaux-500 hover:bg-bordeaux-600 text-white font-semibold text-lg transition-colors shadow-lg hover:shadow-xl"
+        >
+          Accedi
+        </a>
+        <a
+          href="/auth/signup"
+          class="inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl border-2 border-bordeaux-500 text-bordeaux-600 hover:bg-bordeaux-50 font-semibold text-lg transition-colors"
+        >
+          Registrati
+        </a>
+      </div>
+    </div>
+  </section>
 
-  <!-- Main Container -->
-  <div class="bg-white rounded-lg shadow-lg overflow-hidden">
-    <!-- Tab Navigation -->
-    <TabNavigation />
+  <!-- App: Header + Tab + contenuto (visibile solo se loggato) -->
+  <div id="app-content" class="hidden">
+    <Header />
 
-    <!-- Tab Content: Prenotazione -->
-    <PrenotazioneForm />
+    <!-- Main Container -->
+    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+      <!-- Tab Navigation -->
+      <TabNavigation />
+
+      <!-- Tab Content: Prenotazione -->
+      <PrenotazioneForm />
 
     <!-- Tab Content: Admin -->
     <div id="content-admin" class="tab-content hidden p-4 md:p-6">
@@ -226,11 +253,30 @@ import "../styles/global.css";
       </div>
     </div>
   </div>
+  </div>
 </BaseLayout>
 
 <script>
-  // Inizializza Lucide Icons
+  import { supabase } from "../lib/supabase";
+
+  function setLandingVsApp() {
+    const landing = document.getElementById("landing");
+    const appContent = document.getElementById("app-content");
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        landing?.classList.add("hidden");
+        appContent?.classList.remove("hidden");
+      } else {
+        landing?.classList.remove("hidden");
+        appContent?.classList.add("hidden");
+      }
+    });
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
+    setLandingVsApp();
+    supabase.auth.onAuthStateChange(() => setLandingVsApp());
+
     if (typeof (window as any).lucide !== "undefined") {
       (window as any).lucide.createIcons();
     }

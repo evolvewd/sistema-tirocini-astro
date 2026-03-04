@@ -11,6 +11,8 @@ interface ImportMetaEnv {
   readonly SUPABASE_JWT_SECRET?: string;
   /** Password pannello admin */
   readonly ADMIN_PASSWORD?: string;
+  /** Email dell'unico utente che vede il tab Amministrazione (client-side) */
+  readonly PUBLIC_ADMIN_EMAIL?: string;
   /** Resend: API key per email transazionali (conferma prenotazione) */
   readonly RESEND_API_KEY?: string;
   /** Resend: indirizzo mittente (es. "Sistema Tirocini <onboarding@resend.dev>") */

@@ -1,5 +1,5 @@
 ---
-// Tab Navigation Component
+// Tab Navigation Component - tab Admin visibile solo per PUBLIC_ADMIN_EMAIL
 ---
 
 <div class="flex bg-gray-100 border-b border-gray-200 rounded-t-lg">
@@ -13,8 +13,9 @@
   </button>
   <button
     id="tab-admin"
-    class="tab-button flex-1 px-4 py-3 md:px-6 md:py-4 text-sm md:text-base font-medium text-gray-700 hover:text-bordeaux-500 transition-colors duration-200 rounded-tr-lg"
+    class="tab-button flex-1 px-4 py-3 md:px-6 md:py-4 text-sm md:text-base font-medium text-gray-700 hover:text-bordeaux-500 transition-colors duration-200 rounded-tr-lg hidden"
     data-tab="admin"
+    aria-hidden="true"
   >
     <span class="hidden sm:inline">Amministrazione</span>
     <span class="sm:hidden">Admin</span>
@@ -22,8 +23,29 @@
 </div>
 
 <script>
-  // Tab switching con event delegation (moderno)
+  import { supabase } from "../lib/supabase";
+
+  const ADMIN_EMAIL = (import.meta.env.PUBLIC_ADMIN_EMAIL ?? "").trim().toLowerCase();
+
+  function setAdminTabVisibility() {
+    const tabAdmin = document.getElementById("tab-admin");
+    if (!tabAdmin) return;
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const isAdminUser = ADMIN_EMAIL && session?.user?.email?.toLowerCase() === ADMIN_EMAIL;
+      if (isAdminUser) {
+        tabAdmin.classList.remove("hidden");
+        tabAdmin.setAttribute("aria-hidden", "false");
+      } else {
+        tabAdmin.classList.add("hidden");
+        tabAdmin.setAttribute("aria-hidden", "true");
+      }
+    });
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
+    setAdminTabVisibility();
+    supabase.auth.onAuthStateChange(() => setAdminTabVisibility());
+
     const tabButtons = document.querySelectorAll(".tab-button");
     const tabContents = document.querySelectorAll(".tab-content");
 
