@@ -1,17 +1,13 @@
 import type { APIRoute } from "astro";
 import { createSupabaseServerClient } from "../../lib/supabase-server";
+import { isAdminRequest } from "../../lib/admin-auth";
 
-function validateAdminToken(token: string | null): boolean {
-  if (!token) return false;
-  const t = token.replace(/^Bearer\s+/i, "").trim();
-  return t.startsWith("admin_") && t.length > 10;
-}
-
-export const GET: APIRoute = async ({ url }) => {
+export const GET: APIRoute = async ({ url, request }) => {
   try {
     const supabase = createSupabaseServerClient();
-    const adminToken = url.searchParams.get("adminToken");
-    const isAdminRequest = validateAdminToken(adminToken);
+    const isAdmin = await isAdminRequest(request, {
+      queryAdminToken: url.searchParams.get("adminToken"),
+    });
 
     const { data: slotsRows, error } = await supabase
       .from("slots")
@@ -37,7 +33,7 @@ export const GET: APIRoute = async ({ url }) => {
       postiTotali: row.posti_totali,
     }));
 
-    if (isAdminRequest) {
+    if (isAdmin) {
       return new Response(
         JSON.stringify({ success: true, data: allSlots }),
         { headers: { "Content-Type": "application/json" } }
@@ -85,7 +81,10 @@ export const POST: APIRoute = async ({ request }) => {
       adminToken?: string;
     };
 
-    if (!validateAdminToken(adminToken ?? null)) {
+    const isAdmin = await isAdminRequest(request, {
+      queryAdminToken: adminToken ?? null,
+    });
+    if (!isAdmin) {
       return new Response(
         JSON.stringify({ success: false, error: "Unauthorized" }),
         { status: 401, headers: { "Content-Type": "application/json" } }

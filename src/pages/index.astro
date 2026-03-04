@@ -331,6 +331,19 @@ import "../styles/global.css";
     currentTab: "prenotazione",
   };
 
+  const ADMIN_EMAIL = ((import.meta as any).env?.PUBLIC_ADMIN_EMAIL ?? "").trim().toLowerCase();
+
+  /** Restituisce l'header Authorization per le chiamate admin: JWT Supabase se utente admin, altrimenti token legacy. */
+  async function getAdminAuth(): Promise<{ authorization: string } | null> {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user?.email?.toLowerCase() === ADMIN_EMAIL && session?.access_token) {
+      return { authorization: `Bearer ${session.access_token}` };
+    }
+    const legacy = localStorage.getItem("admin_session");
+    if (legacy) return { authorization: legacy };
+    return null;
+  }
+
   // Toast helpers globali (fallback to alert for now)
   function showSuccess(message: string) {
     alert("✅ " + message);
@@ -511,14 +524,15 @@ _/ __ \\  \\/ /  _ \\|  |\\  \\/ // __ \\   / __ |/ __ \\  \\/ /
       submitBtn.innerHTML =
         '<span class="inline-flex items-center gap-2"><i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Aggiungendo...</span>';
 
+      const auth = await getAdminAuth();
+      if (!auth) {
+        showError("Sessione admin scaduta. Ricarica la pagina.");
+        return;
+      }
       const response = await fetch("/api/slots", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          nome,
-          postiTotali,
-          adminToken: localStorage.getItem("admin_session"),
-        }),
+        headers: { "Content-Type": "application/json", Authorization: auth.authorization },
+        body: JSON.stringify({ nome, postiTotali }),
       });
 
       const result = await response.json();
@@ -548,9 +562,11 @@ _/ __ \\  \\/ /  _ \\|  |\\  \\/ // __ \\   / __ |/ __ \\  \\/ /
     }
   }
 
-  function handleAdminTab() {
+  async function handleAdminTab() {
+    const { data: { session } } = await supabase.auth.getSession();
+    const isAdminByEmail = ADMIN_EMAIL && session?.user?.email?.toLowerCase() === ADMIN_EMAIL;
     const savedLogin = localStorage.getItem("admin_session");
-    if (savedLogin) {
+    if (isAdminByEmail || savedLogin) {
       appState.isAdminLoggedIn = true;
       showAdminPanel();
     }
@@ -657,12 +673,14 @@ _/ __ \\  \\/ /  _ \\|  |\\  \\/ // __ \\   / __ |/ __ \\  \\/ /
 
   async function loadAdminData() {
     try {
-      const adminToken = localStorage.getItem("admin_session");
+      const auth = await getAdminAuth();
+      if (!auth) return;
+      const headers = { Authorization: auth.authorization };
 
       // Carica slot e prenotazioni in parallelo
       const [slotsResponse, prenotazioniResponse] = await Promise.all([
-        fetch(`/api/slots?adminToken=${adminToken}`), // Aggiungi token per vedere tutti gli slot
-        fetch("/api/prenotazioni?adminToken=" + adminToken),
+        fetch("/api/slots", { headers }),
+        fetch("/api/prenotazioni", { headers }),
       ]);
 
       const slotsData = await slotsResponse.json();
@@ -891,16 +909,14 @@ _/ __ \\  \\/ /  _ \\|  |\\  \\/ // __ \\   / __ |/ __ \\  \\/ /
     }
 
     try {
-      const token =
-        localStorage.getItem("admin_session") ||
-        "admin_1758307374159_ywk6ewma2x";
-
+      const auth = await getAdminAuth();
+      if (!auth) {
+        showError("Sessione admin scaduta. Ricarica la pagina.");
+        return;
+      }
       const response = await fetch(`/api/slots/${id}`, {
         method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: token,
-        },
+        headers: { "Content-Type": "application/json", Authorization: auth.authorization },
       });
 
       const result = await response.json();
@@ -934,15 +950,14 @@ _/ __ \\  \\/ /  _ \\|  |\\  \\/ // __ \\   / __ |/ __ \\  \\/ /
     }
 
     try {
-      const token =
-        localStorage.getItem("admin_session") ||
-        "admin_1758307374159_ywk6ewma2x";
-
+      const auth = await getAdminAuth();
+      if (!auth) {
+        showError("Sessione admin scaduta. Ricarica la pagina.");
+        return;
+      }
       const response = await fetch(`/api/prenotazioni/${id}`, {
         method: "DELETE",
-        headers: {
-          Authorization: token,
-        },
+        headers: { Authorization: auth.authorization },
       });
 
       const result = await response.json();

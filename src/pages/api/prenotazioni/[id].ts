@@ -1,19 +1,12 @@
 import type { APIRoute } from "astro";
 import { createSupabaseServerClient } from "../../../lib/supabase-server";
-
-function validateAdminToken(token: string | null): boolean {
-  if (!token) return false;
-  const t = token.replace(/^Bearer\s+/i, "").trim();
-  return t.startsWith("admin_") && t.length > 10;
-}
+import { isAdminRequest } from "../../../lib/admin-auth";
 
 export const DELETE: APIRoute = async ({ params, request }) => {
   try {
     const prenotazioneId = params.id;
-    const authHeader = request.headers.get("Authorization");
-    const token = authHeader?.replace(/^Bearer\s+/i, "").trim();
-
-    if (!validateAdminToken(token ?? null)) {
+    const isAdmin = await isAdminRequest(request);
+    if (!isAdmin) {
       return new Response(
         JSON.stringify({ success: false, error: "Unauthorized" }),
         { status: 401, headers: { "Content-Type": "application/json" } }

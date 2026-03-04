@@ -27,9 +27,25 @@ export function getUserIdFromAuthHeader(authHeader: string | null): Promise<stri
 }
 
 /**
+ * Restituisce l'email dell'utente dal token Supabase (per verificare se è l'admin).
+ */
+export async function getEmailFromAuthHeader(authHeader: string | null): Promise<string | null> {
+  if (!authHeader?.startsWith("Bearer ")) return null;
+  const token = authHeader.slice(7).trim();
+  if (!token) return null;
+  const user = await getSupabaseUserFromToken(token);
+  return user?.email ?? null;
+}
+
+interface SupabaseUserInfo {
+  id: string;
+  email: string | null;
+}
+
+/**
  * Chiede a Supabase chi è l'utente per questo token (valido per ECC e HS256).
  */
-async function getUserIdFromSupabaseToken(token: string): Promise<string | null> {
+async function getSupabaseUserFromToken(token: string): Promise<SupabaseUserInfo | null> {
   if (!supabaseUrl || !supabaseAnonKey) {
     console.warn("PUBLIC_SUPABASE_URL o PUBLIC_SUPABASE_ANON_KEY non impostati");
     return null;
@@ -42,9 +58,15 @@ async function getUserIdFromSupabaseToken(token: string): Promise<string | null>
       },
     });
     if (!res.ok) return null;
-    const data = (await res.json()) as { id?: string };
-    return data.id ?? null;
+    const data = (await res.json()) as { id?: string; email?: string };
+    if (!data?.id) return null;
+    return { id: data.id, email: data.email ?? null };
   } catch {
     return null;
   }
+}
+
+async function getUserIdFromSupabaseToken(token: string): Promise<string | null> {
+  const user = await getSupabaseUserFromToken(token);
+  return user?.id ?? null;
 }

@@ -1,13 +1,8 @@
 import type { APIRoute } from "astro";
 import { createSupabaseServerClient } from "../../lib/supabase-server";
 import { getUserIdFromAuthHeader } from "../../lib/supabase-auth";
+import { isAdminRequest } from "../../lib/admin-auth";
 import { sendPrenotazioneConfirmEmail } from "../../lib/send-email";
-
-function validateAdminToken(token: string | null): boolean {
-  if (!token) return false;
-  const t = token.replace(/^Bearer\s+/i, "").trim();
-  return t.startsWith("admin_") && t.length > 10;
-}
 
 interface PrenotazionePayload {
   email: string;
@@ -81,10 +76,10 @@ function toLegacy(p: {
 
 export const GET: APIRoute = async ({ url, request }) => {
   try {
-    const authHeader = request.headers.get("Authorization");
-    const adminToken = authHeader ?? url.searchParams.get("adminToken") ?? null;
-
-    if (!validateAdminToken(adminToken)) {
+    const isAdmin = await isAdminRequest(request, {
+      queryAdminToken: url.searchParams.get("adminToken"),
+    });
+    if (!isAdmin) {
       return new Response(
         JSON.stringify({ success: false, error: "Unauthorized" }),
         { status: 401, headers: { "Content-Type": "application/json" } }
