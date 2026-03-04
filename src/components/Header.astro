@@ -3,10 +3,102 @@
 ---
 
 <div
-  class="bg-bordeaux-500 text-white p-6 md:p-8 rounded-lg mb-6 text-center animate-fade-in"
+  class="bg-bordeaux-500 text-white p-6 md:p-8 rounded-lg mb-6 animate-fade-in"
 >
-  <h1 class="text-2xl md:text-3xl font-bold mb-2">
-    Sistema Prenotazione Tirocini
-  </h1>
-  <p class="text-bordeaux-100">Gestione prenotazioni e sedi disponibili</p>
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 text-center md:text-left">
+    <div>
+      <h1 class="text-2xl md:text-3xl font-bold mb-2">
+        Sistema Prenotazione Tirocini
+      </h1>
+      <p class="text-bordeaux-100">Gestione prenotazioni e sedi disponibili</p>
+    </div>
+    <div id="auth-header" class="flex items-center justify-center md:justify-end gap-2 flex-wrap">
+      <!-- Loggato: avatar + nome/email + Esci -->
+      <div id="auth-user" class="hidden flex items-center gap-2 mr-2">
+        <img id="auth-avatar" src="" alt="" class="w-8 h-8 rounded-full border-2 border-white/50 bg-white/20 object-cover hidden" />
+        <span id="auth-user-name" class="text-sm text-bordeaux-100"></span>
+      </div>
+      <a
+        id="auth-login-link"
+        href="/auth/login"
+        class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/15 hover:bg-white/25 text-white text-sm font-medium transition-colors"
+      >
+        Accedi
+      </a>
+      <a
+        id="auth-signup-link"
+        href="/auth/signup"
+        class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-white/50 hover:bg-white/10 text-white text-sm font-medium transition-colors"
+      >
+        Registrati
+      </a>
+      <button
+        id="auth-logout-btn"
+        type="button"
+        class="hidden inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/15 hover:bg-white/25 text-white text-sm font-medium transition-colors"
+      >
+        Esci
+      </button>
+    </div>
+  </div>
 </div>
+
+<script>
+  import { supabase } from "../lib/supabase";
+
+  function displayName(meta: Record<string, unknown> | undefined, email: string | undefined): string {
+    if (!meta) return email ?? "Utente";
+    const name = (meta.name as string) || (meta.full_name as string);
+    if (name) return name;
+    const given = meta.given_name as string;
+    const family = meta.family_name as string;
+    if (given || family) return [given, family].filter(Boolean).join(" ").trim();
+    return email ?? "Utente";
+  }
+
+  function updateAuthUI() {
+    const userBlock = document.getElementById("auth-user");
+    const avatarImg = document.getElementById("auth-avatar") as HTMLImageElement | null;
+    const nameSpan = document.getElementById("auth-user-name");
+    const loginLink = document.getElementById("auth-login-link");
+    const signupLink = document.getElementById("auth-signup-link");
+    const logoutBtn = document.getElementById("auth-logout-btn");
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        if (userBlock) userBlock.classList.remove("hidden");
+        const meta = session.user.user_metadata as Record<string, unknown> | undefined;
+        const picture = meta?.picture as string | undefined;
+        if (avatarImg) {
+          if (picture) {
+            avatarImg.src = picture;
+            avatarImg.alt = displayName(meta, session.user.email ?? undefined);
+            avatarImg.classList.remove("hidden");
+          } else {
+            avatarImg.classList.add("hidden");
+          }
+        }
+        if (nameSpan) nameSpan.textContent = displayName(meta, session.user.email ?? undefined);
+        if (loginLink) loginLink.classList.add("hidden");
+        if (signupLink) signupLink.classList.add("hidden");
+        if (logoutBtn) logoutBtn.classList.remove("hidden");
+      } else {
+        if (userBlock) userBlock.classList.add("hidden");
+        if (loginLink) loginLink.classList.remove("hidden");
+        if (signupLink) signupLink.classList.remove("hidden");
+        if (logoutBtn) logoutBtn.classList.add("hidden");
+      }
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    updateAuthUI();
+    supabase.auth.onAuthStateChange(() => updateAuthUI());
+
+    document.getElementById("auth-logout-btn")?.addEventListener("click", async () => {
+      await supabase.auth.signOut();
+      updateAuthUI();
+      window.location.href = "/";
+    });
+  });
+</script>

@@ -8,15 +8,16 @@ cd sistema-tirocini-astro
 npm install
 ```
 
-### **2. Configura Environment**
+### **2. Configura Supabase e Environment**
 ```bash
 # Copia il file esempio
-cp env.example .env
+cp .env.example .env
 
-# Modifica .env con i tuoi dati:
-GOOGLE_API_KEY=your_google_api_key_here
-GOOGLE_SPREADSHEET_ID=1V_cIMcsTawviQH38rC16KxYvCNosmaUzoFsUi75_f70
-ADMIN_PASSWORD=admin00!
+# Configura Supabase (vedi docs/SUPABASE-SETUP.md):
+# - Crea progetto su supabase.com
+# - Esegui supabase/schema.sql nel SQL Editor
+# - Compila .env con PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY,
+#   SUPABASE_SERVICE_ROLE_KEY, SUPABASE_JWT_SECRET, ADMIN_PASSWORD
 ```
 
 ### **3. Avvia Sviluppo**

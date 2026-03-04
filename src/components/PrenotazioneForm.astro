@@ -1,11 +1,25 @@
 ---
-// Form Prenotazione Studenti
+// Form Prenotazione Studenti (richiede accesso Supabase)
 ---
 
 <div id="content-prenotazione" class="tab-content p-6 md:p-8">
   <div class="max-w-4xl mx-auto">
+    <!-- Messaggio: accedi per prenotare -->
+    <div id="prenotazione-login-required" class="hidden mb-6 p-6 bg-amber-50 border border-amber-200 rounded-xl text-center">
+      <p class="text-amber-800 font-medium mb-2">Per prenotare devi effettuare l'accesso.</p>
+      <p class="text-amber-700 text-sm mb-4">Crea un account o accedi con la tua email.</p>
+      <div class="flex flex-wrap justify-center gap-3">
+        <a href="/auth/login" class="btn-primary inline-flex items-center gap-2 py-2 px-4 rounded-lg text-sm">
+          Accedi
+        </a>
+        <a href="/auth/signup" class="inline-flex items-center gap-2 py-2 px-4 rounded-lg border-2 border-bordeaux-500 text-bordeaux-600 hover:bg-bordeaux-50 text-sm font-medium transition-colors">
+          Registrati
+        </a>
+      </div>
+    </div>
+
     <!-- Header Form -->
-    <div class="text-center mb-8">
+    <div id="prenotazione-form-header" class="text-center mb-8">
       <h2 class="text-2xl md:text-3xl font-bold text-slate-900 mb-2">
         Prenota il tuo Tirocinio
       </h2>
@@ -244,21 +258,63 @@
   </div>
 
   <script>
-    // Form handling con validazione moderna
-    document.addEventListener("DOMContentLoaded", () => {
-      const form = document.getElementById(
-        "prenotazioneForm"
-      ) as HTMLFormElement;
-      const oreRecupero = document.getElementById(
-        "oreRecupero"
-      ) as HTMLSelectElement;
-      const qtaContainer = document.getElementById(
-        "qtaOreContainer"
-      ) as HTMLElement;
+    import { supabase } from "../lib/supabase";
+
+    function setPrenotazioneAuthState(hasSession: boolean) {
+      const loginRequired = document.getElementById("prenotazione-login-required");
+      const formHeader = document.getElementById("prenotazione-form-header");
+      const form = document.getElementById("prenotazioneForm");
+      if (hasSession) {
+        loginRequired?.classList.add("hidden");
+        formHeader?.classList.remove("hidden");
+        form?.classList.remove("hidden");
+      } else {
+        loginRequired?.classList.remove("hidden");
+        formHeader?.classList.add("hidden");
+        form?.classList.add("hidden");
+      }
+    }
+
+    function prefillFormFromSession(session: { user: { email?: string; user_metadata?: Record<string, string> } } | null) {
+      if (!session?.user) return;
+      const meta = session.user.user_metadata ?? {};
+      const emailInput = document.getElementById("email") as HTMLInputElement | null;
+      const nomeInput = document.getElementById("nome") as HTMLInputElement | null;
+      const cognomeInput = document.getElementById("cognome") as HTMLInputElement | null;
+
+      if (emailInput && session.user.email) emailInput.value = session.user.email;
+
+      const fullName = String(meta.full_name ?? meta.name ?? "").trim();
+      const parts = fullName ? fullName.split(/\s+/) : [];
+      const nome = String(meta.given_name ?? parts[0] ?? "").trim();
+      const cognome = String(meta.family_name ?? parts.slice(1).join(" ") ?? "").trim();
+
+      if (nomeInput && nome) nomeInput.value = nome;
+      if (cognomeInput && cognome) cognomeInput.value = cognome;
+    }
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      const form = document.getElementById("prenotazioneForm") as HTMLFormElement;
+      const oreRecupero = document.getElementById("oreRecupero") as HTMLSelectElement;
+      const qtaContainer = document.getElementById("qtaOreContainer") as HTMLElement;
       const qtaInput = document.getElementById("qtaOre") as HTMLInputElement;
 
+      const { data: { session } } = await supabase.auth.getSession();
+      setPrenotazioneAuthState(!!session);
+      prefillFormFromSession(session);
 
-      // Toggle ore recupero
+      supabase.auth.onAuthStateChange((_event, newSession) => {
+        setPrenotazioneAuthState(!!newSession);
+        prefillFormFromSession(newSession);
+      });
+
+      window.addEventListener("tabChanged", (e: Event) => {
+        const detail = (e as CustomEvent).detail;
+        if (detail?.tab === "prenotazione") {
+          supabase.auth.getSession().then(({ data: { session: s } }) => prefillFormFromSession(s));
+        }
+      });
+
       oreRecupero?.addEventListener("change", () => {
         if (oreRecupero.value === "Sì") {
           qtaContainer?.classList.remove("hidden");
@@ -272,17 +328,20 @@
         }
       });
 
-      // Form submission
       form?.addEventListener("submit", async (e) => {
         e.preventDefault();
 
-        const submitBtn = document.getElementById(
-          "submitBtn"
-        ) as HTMLButtonElement;
+        const { data: { session: submitSession } } = await supabase.auth.getSession();
+        if (!submitSession?.access_token) {
+          alert("Sessione scaduta. Effettua di nuovo l'accesso per prenotare.");
+          setPrenotazioneAuthState(false);
+          return;
+        }
+
+        const submitBtn = document.getElementById("submitBtn") as HTMLButtonElement;
         const submitText = document.getElementById("submitText") as HTMLElement;
         const submitIcon = document.getElementById("submitIcon") as HTMLElement;
 
-        // Loading state
         submitBtn.disabled = true;
         submitText.textContent = "Prenotazione in corso...";
         submitIcon.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i>`;
@@ -291,8 +350,6 @@
           const formData = new FormData(form);
           const data = Object.fromEntries(formData.entries());
 
-
-          // Validazione
           if (
             data.oreRecupero === "Sì" &&
             (!data.qtaOre || parseFloat(data.qtaOre as string) < 0.5)
@@ -300,10 +357,12 @@
             throw new Error("Inserisci la quantità di ore da recuperare (minimo 0.5)");
           }
 
-          // Chiamata API
           const response = await fetch("/api/prenotazioni", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${submitSession.access_token}`,
+            },
             body: JSON.stringify(data),
           });
 
@@ -313,32 +372,23 @@
             throw new Error(result.error);
           }
 
-          // Successo
           form.reset();
-          alert(
-            "🎉 Prenotazione confermata! Riceverai una conferma via email."
-          );
+          prefillFormFromSession(submitSession);
+          alert("Prenotazione confermata! Riceverai una conferma via email.");
 
-          // Ricarica slot disponibili
           window.dispatchEvent(new CustomEvent("reloadSlots"));
         } catch (error) {
-          const errorMessage =
-            error instanceof Error ? error.message : "Errore di connessione";
+          const errorMessage = error instanceof Error ? error.message : "Errore di connessione";
           alert("❌ " + errorMessage);
         } finally {
-          // Reset button
           submitBtn.disabled = false;
           submitText.textContent = "Prenota Tirocinio";
           submitIcon.innerHTML = `<i data-lucide="calendar-plus" class="w-5 h-5"></i>`;
-          
-          // Aggiorna icone Lucide
           if (typeof (window as any).lucide !== "undefined") {
             (window as any).lucide.createIcons();
           }
         }
       });
     });
-
-    // Utility functions
   </script>
 </div>

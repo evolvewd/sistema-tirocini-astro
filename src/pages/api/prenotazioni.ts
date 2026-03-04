@@ -1,10 +1,14 @@
 import type { APIRoute } from "astro";
-import { googleAuth } from "../../lib/google-auth";
+import { createSupabaseServerClient } from "../../lib/supabase-server";
+import { getUserIdFromAuthHeader } from "../../lib/supabase-auth";
 
-// Configurazione Google Sheets
-const SPREADSHEET_ID = import.meta.env.GOOGLE_SPREADSHEET_ID;
+function validateAdminToken(token: string | null): boolean {
+  if (!token) return false;
+  const t = token.replace(/^Bearer\s+/i, "").trim();
+  return t.startsWith("admin_") && t.length > 10;
+}
 
-interface PrenotazioneData {
+interface PrenotazionePayload {
   email: string;
   cognome: string;
   nome: string;
@@ -18,329 +22,236 @@ interface PrenotazioneData {
   note?: string;
 }
 
+function validatePrenotazioneData(data: PrenotazionePayload): { isValid: boolean; errors: string[] } {
+  const errors: string[] = [];
+  if (!data.email?.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+    errors.push("Email non valida");
+  }
+  if (!data.cognome?.trim() || data.cognome.trim().length < 2) {
+    errors.push("Cognome deve essere di almeno 2 caratteri");
+  }
+  if (!data.nome?.trim() || data.nome.trim().length < 2) {
+    errors.push("Nome deve essere di almeno 2 caratteri");
+  }
+  const required = ["annoCorso", "modalita", "numeroTirocinio", "mese", "slotAssegnato", "oreRecupero"] as const;
+  for (const field of required) {
+    if (!data[field]?.toString().trim()) {
+      errors.push(`${field} è obbligatorio`);
+    }
+  }
+  if (data.oreRecupero === "Sì" && (!data.qtaOre || parseFloat(data.qtaOre) < 0.5)) {
+    errors.push("Quantità ore da recuperare obbligatoria (minimo 0.5)");
+  }
+  return { isValid: errors.length === 0, errors };
+}
+
+/** Mappa riga DB → formato legacy per il frontend */
+function toLegacy(p: {
+  id: string;
+  data_prenotazione: string;
+  email: string;
+  cognome: string;
+  nome: string;
+  anno_corso: string;
+  modalita: string;
+  numero_tirocinio: string;
+  mese: string;
+  slot_assegnato: number;
+  ore_recupero: string;
+  qta_ore: string | null;
+  note: string | null;
+}) {
+  return {
+    id: p.id,
+    dataPrenotazione: p.data_prenotazione,
+    email: p.email,
+    cognome: p.cognome,
+    nome: p.nome,
+    annoCorso: p.anno_corso,
+    modalita: p.modalita,
+    numeroTirocinio: p.numero_tirocinio,
+    mese: p.mese,
+    slotAssegnato: String(p.slot_assegnato),
+    oreRecupero: p.ore_recupero || "No",
+    qtaOre: p.qta_ore ?? "",
+    note: p.note ?? "",
+  };
+}
+
+export const GET: APIRoute = async ({ url, request }) => {
+  try {
+    const authHeader = request.headers.get("Authorization");
+    const adminToken = authHeader ?? url.searchParams.get("adminToken") ?? null;
+
+    if (!validateAdminToken(adminToken)) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Unauthorized" }),
+        { status: 401, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    const supabase = createSupabaseServerClient();
+    const { data: rows, error } = await supabase
+      .from("prenotazioni")
+      .select("*")
+      .order("data_prenotazione", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching prenotazioni:", error);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Errore nel caricamento delle prenotazioni",
+          details: error.message,
+        }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    const data = (rows ?? []).map(toLegacy);
+    return new Response(
+      JSON.stringify({ success: true, data }),
+      { headers: { "Content-Type": "application/json" } }
+    );
+  } catch (err) {
+    console.error("Error in prenotazioni GET:", err);
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: "Errore interno del server",
+        details: err instanceof Error ? err.message : "",
+      }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
+  }
+};
+
 export const POST: APIRoute = async ({ request }) => {
   try {
-    const data: PrenotazioneData = await request.json();
+    const authHeader = request.headers.get("Authorization");
+    const userId = getUserIdFromAuthHeader(authHeader);
 
-    // Validazione
-    const validation = validatePrenotazioneData(data);
+    if (!userId) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Devi effettuare l'accesso per prenotare. Iscriviti o accedi.",
+        }),
+        { status: 401, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    const body = (await request.json()) as PrenotazionePayload;
+    const validation = validatePrenotazioneData(body);
     if (!validation.isValid) {
       return new Response(
         JSON.stringify({
           success: false,
           error: validation.errors.join(", "),
         }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        }
+        { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
-    // Controlla email duplicata
-    const isDuplicate = await checkDuplicateEmail(data.email);
-    if (isDuplicate) {
+    const supabase = createSupabaseServerClient();
+    const slotId = parseInt(body.slotAssegnato, 10);
+    if (Number.isNaN(slotId)) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Sede non valida" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    const { count: duplicateCount } = await supabase
+      .from("prenotazioni")
+      .select("id", { count: "exact", head: true })
+      .eq("email", body.email.trim());
+
+    if (duplicateCount && duplicateCount > 0) {
       return new Response(
         JSON.stringify({
           success: false,
           error: "Questa email ha già effettuato una prenotazione!",
         }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        }
+        { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
-    // Controlla disponibilità slot
-    const isAvailable = await checkSlotAvailability(data.slotAssegnato);
-    if (!isAvailable) {
+    const { data: slotRow } = await supabase
+      .from("slots")
+      .select("id, posti_totali")
+      .eq("id", slotId)
+      .single();
+
+    if (!slotRow) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Sede non trovata" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    const { count: occupati } = await supabase
+      .from("prenotazioni")
+      .select("id", { count: "exact", head: true })
+      .eq("slot_assegnato", slotId);
+
+    if ((occupati ?? 0) >= slotRow.posti_totali) {
       return new Response(
         JSON.stringify({
           success: false,
           error: "Spiacente, questa sede non ha più posti disponibili!",
         }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        }
+        { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
-    // Salva prenotazione
-    const result = await savePrenotazione(data);
+    const { data: inserted, error } = await supabase
+      .from("prenotazioni")
+      .insert({
+        user_id: userId,
+        email: body.email.trim(),
+        cognome: body.cognome.trim(),
+        nome: body.nome.trim(),
+        anno_corso: body.annoCorso,
+        modalita: body.modalita,
+        numero_tirocinio: body.numeroTirocinio,
+        mese: body.mese,
+        slot_assegnato: slotId,
+        ore_recupero: body.oreRecupero,
+        qta_ore: body.oreRecupero === "Sì" ? (body.qtaOre ?? "").trim() || null : null,
+        note: body.note?.trim() || null,
+      })
+      .select("id, data_prenotazione")
+      .single();
+
+    if (error) {
+      console.error("Error inserting prenotazione:", error);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Errore nel salvataggio della prenotazione",
+          details: error.message,
+        }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
 
     return new Response(
       JSON.stringify({
         success: true,
-        data: result,
+        data: { id: inserted.id, message: "Prenotazione creata con successo" },
       }),
-      {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      }
+      { status: 200, headers: { "Content-Type": "application/json" } }
     );
-  } catch (error) {
-    console.error("Error in prenotazioni API:", error);
+  } catch (err) {
+    console.error("Error in prenotazioni POST:", err);
     return new Response(
       JSON.stringify({
         success: false,
         error: "Errore interno del server",
+        details: err instanceof Error ? err.message : "",
       }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      }
+      { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
 };
-
-export const GET: APIRoute = async ({ url, request }) => {
-  try {
-    // Get prenotazioni (per admin) - supporta sia header che query param
-    const authHeader = request.headers.get("Authorization");
-    const adminToken = authHeader || url.searchParams.get("adminToken");
-
-    if (!adminToken || !validateAdminToken(adminToken)) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: "Unauthorized",
-        }),
-        {
-          status: 401,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    const prenotazioni = await getPrenotazioni();
-
-    return new Response(
-      JSON.stringify({
-        success: true,
-        data: prenotazioni,
-      }),
-      {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
-  } catch (error) {
-    console.error("Error getting prenotazioni:", error);
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: "Errore nel caricamento delle prenotazioni",
-      }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
-  }
-};
-
-// === UTILITY FUNCTIONS ===
-
-function validatePrenotazioneData(data: PrenotazioneData) {
-  const errors: string[] = [];
-
-  if (!data.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
-    errors.push("Email non valida");
-  }
-
-  if (!data.cognome || data.cognome.trim().length < 2) {
-    errors.push("Cognome deve essere di almeno 2 caratteri");
-  }
-
-  if (!data.nome || data.nome.trim().length < 2) {
-    errors.push("Nome deve essere di almeno 2 caratteri");
-  }
-
-  const required = [
-    "annoCorso",
-    "modalita",
-    "numeroTirocinio",
-    "mese",
-    "slotAssegnato",
-    "oreRecupero",
-  ];
-  for (const field of required) {
-    if (!data[field as keyof PrenotazioneData]) {
-      errors.push(`${field} è obbligatorio`);
-    }
-  }
-
-  if (
-    data.oreRecupero === "Sì" &&
-    (!data.qtaOre || parseFloat(data.qtaOre) < 0.5)
-  ) {
-    errors.push("Quantità ore da recuperare è obbligatoria (minimo 0.5)");
-  }
-
-  return {
-    isValid: errors.length === 0,
-    errors,
-  };
-}
-
-async function checkDuplicateEmail(email: string): Promise<boolean> {
-  try {
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Prenotazioni!C:C`;
-    const response = await googleAuth.makeAuthenticatedRequest(url);
-
-    if (!response.ok) {
-      console.error("Error checking duplicate email - HTTP:", response.status);
-      return false; // In caso di errore, non bloccare la prenotazione
-    }
-
-    const data = await response.json();
-
-    if (data.values) {
-      return data.values.some(
-        (row: string[], index: number) => index > 0 && row[0] === email
-      );
-    }
-
-    return false;
-  } catch (error) {
-    console.error("Error checking duplicate email:", error);
-    return false; // In caso di errore, non bloccare la prenotazione
-  }
-}
-
-async function checkSlotAvailability(slotId: string): Promise<boolean> {
-  try {
-    // 1. Ottieni i dati dello slot per conoscere i posti totali
-    const slotsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Slots!A:C`;
-    const slotsResponse = await googleAuth.makeAuthenticatedRequest(slotsUrl);
-    
-    if (!slotsResponse.ok) {
-      console.error("Error fetching slots for availability check:", slotsResponse.status);
-      return false;
-    }
-    
-    const slotsData = await slotsResponse.json();
-    if (!slotsData.values || slotsData.values.length <= 1) {
-      return false;
-    }
-    
-    // Trova lo slot specifico
-    const slot = slotsData.values
-      .slice(1) // Salta header
-      .find((row: string[]) => row[0] === slotId);
-    
-    if (!slot) {
-      return false; // Slot non trovato
-    }
-    
-    const postiTotali = parseInt(slot[2]) || 0;
-    if (postiTotali <= 0) {
-      return false; // Slot senza posti
-    }
-    
-    // 2. Conta le prenotazioni esistenti per questo slot
-    const prenotazioniUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Prenotazioni!A:M`;
-    const prenotazioniResponse = await googleAuth.makeAuthenticatedRequest(prenotazioniUrl);
-    
-    if (!prenotazioniResponse.ok) {
-      console.error("Error fetching prenotazioni for availability check:", prenotazioniResponse.status);
-      return false;
-    }
-    
-    const prenotazioniData = await prenotazioniResponse.json();
-    if (!prenotazioniData.values || prenotazioniData.values.length <= 1) {
-      return true; // Nessuna prenotazione esistente, slot disponibile
-    }
-    
-    // Conta prenotazioni per questo slot (colonna I = slotAssegnato)
-    const prenotazioniCount = prenotazioniData.values
-      .slice(1) // Salta header
-      .filter((row: string[]) => row[9] === slotId).length; // Colonna I (0-indexed = 9)
-    
-    const disponibili = postiTotali - prenotazioniCount;
-    
-    
-    return disponibili > 0;
-  } catch (error) {
-    console.error("Error checking slot availability:", error);
-    return false;
-  }
-}
-
-async function savePrenotazione(data: PrenotazioneData) {
-  try {
-    const id = Date.now();
-    const timestamp = new Date().toISOString();
-
-    const row = [
-      id,
-      timestamp,
-      data.email,
-      data.cognome,
-      data.nome,
-      data.annoCorso,
-      data.modalita,
-      data.numeroTirocinio,
-      data.mese,
-      data.slotAssegnato,
-      data.oreRecupero,
-      data.qtaOre || "",
-      data.note || "",
-    ];
-
-    // Append row to Google Sheets
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Prenotazioni!A:M:append?valueInputOption=RAW`;
-    const response = await googleAuth.makeAuthenticatedRequest(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ values: [row] }),
-    });
-
-    if (!response.ok) {
-      throw new Error("Errore salvataggio prenotazione");
-    }
-
-    return { id, message: "Prenotazione creata con successo" };
-  } catch (error) {
-    console.error("Error saving prenotazione:", error);
-    throw error;
-  }
-}
-
-async function getPrenotazioni() {
-  try {
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Prenotazioni!A:M`;
-    const response = await googleAuth.makeAuthenticatedRequest(url);
-    const data = await response.json();
-
-    if (!data.values || data.values.length <= 1) {
-      return [];
-    }
-
-    return data.values.slice(1).map((row: string[]) => ({
-      id: row[0],
-      dataPrenotazione: row[1],
-      email: row[2],
-      cognome: row[3],
-      nome: row[4],
-      annoCorso: row[5],
-      modalita: row[6],
-      numeroTirocinio: row[7],
-      mese: row[8],
-      slotAssegnato: row[9],
-      oreRecupero: row[10] || "No",
-      qtaOre: row[11] || "",
-      note: row[12] || "",
-    }));
-  } catch (error) {
-    console.error("Error getting prenotazioni:", error);
-    throw error;
-  }
-}
-
-function validateAdminToken(token: string): boolean {
-  // Valida token generati dal login admin
-  return token?.startsWith("admin_") && token.length > 10;
-}
