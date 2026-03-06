@@ -23,14 +23,7 @@
         href="/auth/login"
         class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/15 hover:bg-white/25 text-white text-sm font-medium transition-colors"
       >
-        Accedi
-      </a>
-      <a
-        id="auth-signup-link"
-        href="/auth/signup"
-        class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-white/50 hover:bg-white/10 text-white text-sm font-medium transition-colors"
-      >
-        Registrati
+        Effettua accesso con mail @edu.unito.it
       </a>
       <button
         id="auth-logout-btn"
@@ -61,7 +54,6 @@
     const avatarImg = document.getElementById("auth-avatar") as HTMLImageElement | null;
     const nameSpan = document.getElementById("auth-user-name");
     const loginLink = document.getElementById("auth-login-link");
-    const signupLink = document.getElementById("auth-signup-link");
     const logoutBtn = document.getElementById("auth-logout-btn");
 
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -80,12 +72,10 @@
         }
         if (nameSpan) nameSpan.textContent = displayName(meta, session.user.email ?? undefined);
         if (loginLink) loginLink.classList.add("hidden");
-        if (signupLink) signupLink.classList.add("hidden");
         if (logoutBtn) logoutBtn.classList.remove("hidden");
       } else {
         if (userBlock) userBlock.classList.add("hidden");
         if (loginLink) loginLink.classList.remove("hidden");
-        if (signupLink) signupLink.classList.remove("hidden");
         if (logoutBtn) logoutBtn.classList.add("hidden");
       }
     });
