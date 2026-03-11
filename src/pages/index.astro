@@ -419,12 +419,14 @@ import "../styles/global.css";
 
     select.innerHTML = '<option value="">Seleziona una sede...</option>';
 
-    appState.slots.forEach((slot) => {
-      const option = document.createElement("option");
-      option.value = slot.id;
-      option.textContent = slot.nome; // Solo il nome, senza informazioni sui posti
-      select.appendChild(option);
-    });
+    [...appState.slots]
+      .sort((a, b) => (a.nome ?? "").localeCompare(b.nome ?? "", "it"))
+      .forEach((slot) => {
+        const option = document.createElement("option");
+        option.value = slot.id;
+        option.textContent = slot.nome;
+        select.appendChild(option);
+      });
   }
 
   function setupEventListeners() {
@@ -1065,7 +1067,14 @@ import "../styles/global.css";
         return lines;
       };
 
-      appState.prenotazioni.forEach((prenotazione, index) => {
+      const prenotazioniOrdinate = [...appState.prenotazioni].sort(
+        (a, b) => {
+          const sedeA = appState.slots.find((s) => s.id == a.slotAssegnato);
+          const sedeB = appState.slots.find((s) => s.id == b.slotAssegnato);
+          return (sedeA?.nome ?? "").localeCompare(sedeB?.nome ?? "", "it");
+        },
+      );
+      prenotazioniOrdinate.forEach((prenotazione, index) => {
         const sede = appState.slots.find(
           (s) => s.id == prenotazione.slotAssegnato,
         );
@@ -1082,7 +1091,12 @@ import "../styles/global.css";
             : text;
         };
 
-        // Prepara i dati per ogni colonna
+        // Sede: su due righe se lunga (larghezza colonna ~35)
+        const sedeNome = sede?.nome || "N/A";
+        const rawSedeLines = wrapText(sedeNome, colWidths[7], 2);
+        const sedeLines = rawSedeLines.length > 0 ? rawSedeLines : ["N/A"];
+
+        // Prepara i dati per ogni colonna (colonna Sede la disegniamo a parte su 2 righe)
         const rowData = [
           truncateText(prenotazione.cognome, 16),
           truncateText(prenotazione.nome, 18),
@@ -1091,19 +1105,20 @@ import "../styles/global.css";
           truncateText(prenotazione.modalita, 16),
           prenotazione.numeroTirocinio,
           truncateText(prenotazione.mese, 16),
-          truncateText(sede?.nome || "N/A", 32),
+          "", // Sede: disegnata sotto con sedeLines
           prenotazione.oreRecupero,
           prenotazione.oreRecupero === "Sì" ? oreText : "-",
           dataFormatted,
           prenotazione.note || "",
         ];
 
-        // Calcola altezza necessaria per le note (se presenti)
+        // Calcola altezza necessaria per note e per sede (2 righe)
         const noteLines = prenotazione.note
           ? wrapText(prenotazione.note, colWidths[11] * 2.5, 2)
           : [""];
         const noteHeight = noteLines.length * 3;
-        const totalRowHeight = Math.max(rowHeight, noteHeight);
+        const sedeRowHeight = sedeLines.length * 3.5;
+        const totalRowHeight = Math.max(rowHeight, noteHeight, sedeRowHeight);
 
         // Controlla se serve una nuova pagina
         if (currentY + totalRowHeight > pageHeight - 20) {
@@ -1124,7 +1139,14 @@ import "../styles/global.css";
 
         // Disegna riga dati (tutte le colonne tranne le note)
         for (let colIndex = 0; colIndex < rowData.length - 1; colIndex++) {
-          doc.text(rowData[colIndex], colPositions[colIndex], currentY);
+          if (colIndex === 7) {
+            // Colonna Sede: su due righe
+            sedeLines.forEach((line, lineIdx) => {
+              if (line) doc.text(line, colPositions[7], currentY + lineIdx * 3.5);
+            });
+          } else {
+            doc.text(rowData[colIndex], colPositions[colIndex], currentY);
+          }
         }
 
         // Disegna le note su più righe se presenti
