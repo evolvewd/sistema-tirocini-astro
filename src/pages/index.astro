@@ -349,27 +349,8 @@ import "../styles/global.css";
 
   // Inizializzazione moderna
   document.addEventListener("DOMContentLoaded", async () => {
-    // Mostra la signature ASCII
-    console.log(`
-                  .__                    .___           
-  _______  ______ |  |___  __ ____     __| _/_______  __
-_/ __ \\  \\/ /  _ \\|  |\\  \\/ // __ \\   / __ |/ __ \\  \\/ /
-\\  ___/\\   (  <_> )  |_\\   /\\  ___/  / /_/ \\  ___/\\   / 
- \\___  >\\_/ \\____/|____/\\_/  \\___  > \\____ |\\___  >\\_/  
-     \\/                          \\/       \\/    \\/      
-    `);
-
-    // Messaggio di contatto
-    console.log(
-      "%cGet in touch with me by clicking the footer link",
-      "color: #8b1538; font-weight: bold; font-size: 14px;",
-    );
-
     try {
-      // Carica slot immediatamente
       await loadSlots();
-
-      // Setup event listeners
       setupEventListeners();
     } catch (error) {
       console.error("❌ Errore inizializzazione:", error);
@@ -729,13 +710,12 @@ _/ __ \\  \\/ /  _ \\|  |\\  \\/ // __ \\   / __ |/ __ \\  \\/ /
     container.innerHTML = appState.slots
       .map((slot) => {
         const prenotazioniCount = appState.prenotazioni.filter((p) => {
-          // Confronto come stringhe per evitare problemi di conversione
           const slotAssegnato = String(p.slotAssegnato).trim();
           const slotId = String(slot.id).trim();
           return slotAssegnato === slotId;
         }).length;
         const disponibili = Math.max(0, slot.postiTotali - prenotazioniCount);
-
+        const nomeEscaped = String(slot.nome ?? "").replace(/\\/g, "\\\\").replace(/'/g, "\\'");
         return `
         <div class="flex justify-between items-center py-3 border-b border-gray-200 last:border-b-0">
           <div class="flex-1">
@@ -752,7 +732,7 @@ _/ __ \\  \\/ /  _ \\|  |\\  \\/ // __ \\   / __ |/ __ \\  \\/ /
               </div>
             </div>
             <button 
-              onclick="deleteSlot(${slot.id}, '${slot.nome}')"
+              onclick="deleteSlot(${slot.id}, '${nomeEscaped}')"
               class="inline-flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200 ${prenotazioniCount > 0 ? "bg-gray-300 text-gray-500 cursor-not-allowed" : "bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700"}"
               ${prenotazioniCount > 0 ? 'disabled title="Non puoi eliminare sedi con prenotazioni attive"' : 'title="Elimina sede"'}
             >
@@ -816,6 +796,11 @@ _/ __ \\  \\/ /  _ \\|  |\\  \\/ // __ \\   / __ |/ __ \\  \\/ /
                     hour: "2-digit",
                     minute: "2-digit",
                   });
+                  const nomeStudenteEscaped = String(
+                    `${prenotazione.cognome} ${prenotazione.nome}`.trim(),
+                  )
+                    .replace(/\\/g, "\\\\")
+                    .replace(/'/g, "\\'");
 
                   return `
                   <tr class="${index % 2 === 0 ? "bg-white" : "bg-gray-50"}">
@@ -862,7 +847,7 @@ _/ __ \\  \\/ /  _ \\|  |\\  \\/ // __ \\   / __ |/ __ \\  \\/ /
                     </td>
                     <td class="px-3 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <button
-                        onclick="deletePrenotazione('${prenotazione.id}', '${prenotazione.cognome} ${prenotazione.nome}')"
+                        onclick="deletePrenotazione('${prenotazione.id}', '${nomeStudenteEscaped}')"
                         class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-all duration-200"
                         title="Elimina prenotazione"
                       >
