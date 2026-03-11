@@ -707,7 +707,8 @@ import "../styles/global.css";
       return;
     }
 
-    container.innerHTML = appState.slots
+    container.innerHTML = [...appState.slots]
+      .sort((a, b) => (a.nome ?? "").localeCompare(b.nome ?? "", "it"))
       .map((slot) => {
         const prenotazioniCount = appState.prenotazioni.filter((p) => {
           const slotAssegnato = String(p.slotAssegnato).trim();
