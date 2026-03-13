@@ -25,6 +25,19 @@
       </div>
     </div>
 
+    <!-- Messaggio: prenotazioni chiuse dall'admin -->
+    <div
+      id="prenotazione-chiuse"
+      class="hidden mb-6 p-6 bg-slate-100 border border-slate-300 rounded-xl text-center"
+    >
+      <p class="text-slate-800 font-medium mb-2">
+        Le prenotazioni sono chiuse.
+      </p>
+      <p class="text-slate-600 text-sm">
+        L'amministratore le abiliterà a breve. Torna più tardi per prenotare il tuo tirocinio.
+      </p>
+    </div>
+
     <!-- Header Form -->
     <div id="prenotazione-form-header" class="text-center mb-8">
       <h2 class="text-2xl md:text-3xl font-bold text-slate-900 mb-2">
@@ -259,20 +272,34 @@
   <script>
     import { supabase } from "../lib/supabase";
 
-    function setPrenotazioneAuthState(hasSession: boolean) {
+    async function fetchPrenotazioniAperte(): Promise<boolean> {
+      try {
+        const res = await fetch("/api/config");
+        const data = await res.json();
+        return data.success && data.prenotazioni_aperte === true;
+      } catch {
+        return false;
+      }
+    }
+
+    function setPrenotazioneAuthState(hasSession: boolean, prenotazioniAperte?: boolean) {
       const loginRequired = document.getElementById(
         "prenotazione-login-required",
       );
+      const chiuse = document.getElementById("prenotazione-chiuse");
       const formHeader = document.getElementById("prenotazione-form-header");
       const form = document.getElementById("prenotazioneForm");
-      if (hasSession) {
-        loginRequired?.classList.add("hidden");
-        formHeader?.classList.remove("hidden");
-        form?.classList.remove("hidden");
-      } else {
+      if (!hasSession) {
         loginRequired?.classList.remove("hidden");
+        chiuse?.classList.add("hidden");
         formHeader?.classList.add("hidden");
         form?.classList.add("hidden");
+      } else {
+        loginRequired?.classList.add("hidden");
+        const aperte = prenotazioniAperte ?? true;
+        if (chiuse) chiuse.classList.toggle("hidden", aperte);
+        if (formHeader) formHeader.classList.toggle("hidden", !aperte);
+        if (form) form.classList.toggle("hidden", !aperte);
       }
     }
 
@@ -322,20 +349,23 @@
       const {
         data: { session },
       } = await supabase.auth.getSession();
-      setPrenotazioneAuthState(!!session);
+      const aperte = await fetchPrenotazioniAperte();
+      setPrenotazioneAuthState(!!session, aperte);
       prefillFormFromSession(session);
 
-      supabase.auth.onAuthStateChange((_event, newSession) => {
-        setPrenotazioneAuthState(!!newSession);
+      supabase.auth.onAuthStateChange(async (_event, newSession) => {
+        const aperteState = await fetchPrenotazioniAperte();
+        setPrenotazioneAuthState(!!newSession, aperteState);
         prefillFormFromSession(newSession);
       });
 
-      window.addEventListener("tabChanged", (e: Event) => {
+      window.addEventListener("tabChanged", async (e: Event) => {
         const detail = (e as CustomEvent).detail;
         if (detail?.tab === "prenotazione") {
-          supabase.auth
-            .getSession()
-            .then(({ data: { session: s } }) => prefillFormFromSession(s));
+          const { data: { session: s } } = await supabase.auth.getSession();
+          const aperteState = await fetchPrenotazioniAperte();
+          setPrenotazioneAuthState(!!s, aperteState);
+          prefillFormFromSession(s);
         }
       });
 

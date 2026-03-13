@@ -156,6 +156,34 @@ import "../styles/global.css";
             </button>
           </div>
 
+          <!-- Stato prenotazioni: apri/chiudi per i tirocinanti -->
+          <div
+            id="configPrenotazioniBlock"
+            class="mb-8 p-6 rounded-2xl border-2 border-slate-200 bg-white shadow-sm"
+          >
+            <div class="flex flex-wrap items-center justify-between gap-4">
+              <div class="flex items-center gap-3">
+                <div id="configPrenotazioniIcon" class="p-2 rounded-lg bg-slate-100">
+                  <i data-lucide="calendar-lock" class="w-5 h-5 text-slate-600"></i>
+                </div>
+                <div>
+                  <h3 class="text-lg font-bold text-slate-900">Stato prenotazioni</h3>
+                  <p id="configPrenotazioniStatus" class="text-sm text-slate-600">
+                    Caricamento...
+                  </p>
+                </div>
+              </div>
+              <button
+                id="configPrenotazioniBtn"
+                type="button"
+                class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold transition-all duration-200 disabled:opacity-50"
+              >
+                <i data-lucide="loader-2" class="w-4 h-4 hidden" id="configPrenotazioniSpinner"></i>
+                <span id="configPrenotazioniBtnText">—</span>
+              </button>
+            </div>
+          </div>
+
           <!-- Aggiungi nuova sede -->
           <div
             class="bg-gradient-to-r from-slate-50 to-slate-100 p-6 md:p-8 rounded-2xl mb-8 border border-slate-200 shadow-sm"
@@ -316,6 +344,7 @@ import "../styles/global.css";
     prenotazioni: any[];
     isAdminLoggedIn: boolean;
     currentTab: string;
+    prenotazioniAperte: boolean;
   }
 
   const appState: AppState = {
@@ -323,6 +352,7 @@ import "../styles/global.css";
     prenotazioni: [],
     isAdminLoggedIn: false,
     currentTab: "prenotazione",
+    prenotazioniAperte: false,
   };
 
   const ADMIN_EMAIL = ((import.meta as any).env?.PUBLIC_ADMIN_EMAIL ?? "").trim().toLowerCase();
@@ -476,6 +506,42 @@ import "../styles/global.css";
     // Export PDF button
     const exportBtn = document.getElementById("exportBtn");
     exportBtn?.addEventListener("click", handleExportPDF);
+
+    // Toggle prenotazioni aperte/chiuse (admin)
+    const configPrenotazioniBtn = document.getElementById("configPrenotazioniBtn");
+    configPrenotazioniBtn?.addEventListener("click", handleTogglePrenotazioni);
+  }
+
+  async function handleTogglePrenotazioni() {
+    const btn = document.getElementById("configPrenotazioniBtn") as HTMLButtonElement | null;
+    const spinner = document.getElementById("configPrenotazioniSpinner");
+    if (!btn) return;
+    const auth = await getAdminAuth();
+    if (!auth) {
+      showError("Sessione admin scaduta. Ricarica la pagina.");
+      return;
+    }
+    const newVal = !appState.prenotazioniAperte;
+    btn.disabled = true;
+    spinner?.classList.remove("hidden");
+    try {
+      const res = await fetch("/api/config", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: auth.authorization },
+        body: JSON.stringify({ prenotazioni_aperte: newVal }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        updateConfigUI(data.prenotazioni_aperte);
+      } else {
+        showError(data.error || "Errore aggiornamento");
+      }
+    } catch {
+      showError("Errore di connessione");
+    } finally {
+      if (btn) btn.disabled = false;
+      spinner?.classList.add("hidden");
+    }
   }
 
   async function handleAddSlot(e: Event) {
@@ -675,9 +741,43 @@ import "../styles/global.css";
       // Aggiorna le liste solo dopo aver caricato entrambi i dati
       updateSlotList();
       updatePrenotazioniList();
+
+      await loadConfigForAdmin();
     } catch (error) {
       console.error("❌ Errore caricamento dati admin:", error);
     }
+  }
+
+  async function loadConfigForAdmin() {
+    try {
+      const res = await fetch("/api/config");
+      const data = await res.json();
+      const aperte = data.success && data.prenotazioni_aperte === true;
+      appState.prenotazioniAperte = aperte;
+      updateConfigUI(aperte);
+    } catch {
+      updateConfigUI(false);
+    }
+  }
+
+  function updateConfigUI(prenotazioniAperte: boolean) {
+    appState.prenotazioniAperte = prenotazioniAperte;
+    const statusEl = document.getElementById("configPrenotazioniStatus");
+    const btn = document.getElementById("configPrenotazioniBtn");
+    const btnText = document.getElementById("configPrenotazioniBtnText");
+    const iconWrap = document.getElementById("configPrenotazioniIcon");
+    if (statusEl) statusEl.textContent = prenotazioniAperte ? "I tirocinanti possono prenotare." : "Le prenotazioni sono chiuse. I tirocinanti non possono inviare richieste.";
+    if (btnText) btnText.textContent = prenotazioniAperte ? "Chiudi prenotazioni" : "Apri prenotazioni";
+    if (btn) {
+      btn.className = prenotazioniAperte
+        ? "inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold transition-all duration-200 bg-amber-100 text-amber-800 hover:bg-amber-200 disabled:opacity-50"
+        : "inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold transition-all duration-200 bg-green-600 text-white hover:bg-green-700 disabled:opacity-50";
+    }
+    if (iconWrap) {
+      iconWrap.className = prenotazioniAperte ? "p-2 rounded-lg bg-amber-100" : "p-2 rounded-lg bg-slate-100";
+      iconWrap.innerHTML = prenotazioniAperte ? '<i data-lucide="calendar-check" class="w-5 h-5 text-amber-700"></i>' : '<i data-lucide="calendar-lock" class="w-5 h-5 text-slate-600"></i>';
+    }
+    if (typeof (window as any).lucide !== "undefined") (window as any).lucide.createIcons();
   }
 
   function updateSlotList() {

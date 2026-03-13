@@ -128,6 +128,16 @@ CREATE POLICY "Profiles: update propria"
   ON public.profiles FOR UPDATE
   USING (id = auth.uid());
 
+-- Config: flag prenotazioni aperte (solo service role in API; nessuna policy = solo backend)
+CREATE TABLE IF NOT EXISTS public.config (
+  id TEXT PRIMARY KEY DEFAULT 'main',
+  prenotazioni_aperte BOOLEAN NOT NULL DEFAULT false
+);
+INSERT INTO public.config (id, prenotazioni_aperte) VALUES ('main', false)
+  ON CONFLICT (id) DO NOTHING;
+ALTER TABLE public.config ENABLE ROW LEVEL SECURITY;
+-- Nessuna policy: lettura/scrittura solo tramite API con service role
+
 -- Indici
 CREATE INDEX IF NOT EXISTS idx_prenotazioni_user_id ON public.prenotazioni(user_id);
 CREATE INDEX IF NOT EXISTS idx_prenotazioni_slot_assegnato ON public.prenotazioni(slot_assegnato);

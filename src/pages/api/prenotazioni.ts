@@ -137,6 +137,23 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
+    const supabase = createSupabaseServerClient();
+    const { data: configRow } = await supabase
+      .from("config")
+      .select("prenotazioni_aperte")
+      .eq("id", "main")
+      .single();
+    if (!configRow?.prenotazioni_aperte) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error:
+            "Le prenotazioni sono chiuse. L'amministratore le abiliterà a breve.",
+        }),
+        { status: 403, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
     const body = (await request.json()) as PrenotazionePayload;
     const validation = validatePrenotazioneData(body);
     if (!validation.isValid) {
@@ -149,7 +166,6 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
-    const supabase = createSupabaseServerClient();
     const slotId = parseInt(body.slotAssegnato, 10);
     if (Number.isNaN(slotId)) {
       return new Response(
