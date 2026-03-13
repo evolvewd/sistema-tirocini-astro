@@ -233,15 +233,17 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     const sedeNome = slotRow?.nome ?? "Sede tirocinio";
+    const timeZoneRome = "Europe/Rome";
     const dataPrenotazioneStr = inserted.data_prenotazione
-      ? new Date(inserted.data_prenotazione).toLocaleDateString("it-IT", {
+      ? new Date(inserted.data_prenotazione).toLocaleString("it-IT", {
+          timeZone: timeZoneRome,
           day: "2-digit",
           month: "long",
           year: "numeric",
           hour: "2-digit",
           minute: "2-digit",
         })
-      : new Date().toLocaleDateString("it-IT");
+      : new Date().toLocaleString("it-IT", { timeZone: timeZoneRome });
 
     sendPrenotazioneConfirmEmail({
       to: body.email.trim(),
